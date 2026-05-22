@@ -20,7 +20,7 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base'],
+    'depends': ['base', 'hr'],
 
     # always loaded
     'data': [
@@ -32,6 +32,8 @@
         'views/chung_chi_bang_cap.xml',
         'views/danh_sach_chung_chi_bang_cap.xml',
         'views/menu.xml',
+        'views/iot_project_assignment.xml',
+        'views/iot_device_log.xml',
     ],
     # only loaded in demonstration mode
     'demo': [

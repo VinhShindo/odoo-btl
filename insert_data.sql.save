@@ -1,0 +1,68 @@
+
+
+-- Thêm 10 nhân viên (Cập nhật tuổi chuẩn theo năm hiện tại 2026)
+INSERT INTO hr_employee (id, name, ho_ten_dem, ten, ho_va_ten, ma_dinh_danh, birthday, tuoi, so_nguoi_bang_tuoi, que_quan, work_email, create_date)
+VALUES
+(1, 'Nguyễn Văn An', 'Nguyễn Văn', 'An', 'Nguyễn Văn An', 'NV26001', '1990-05-15', 36, 3, 'Hà Nội', 'an.nv@iotco.com', now()),
+(2, 'Trần Thị Bình', 'Trần Thị', 'Bình', 'Trần Thị Bình', 'NV26002', '1992-08-22', 34, 2, 'Hải Phòng', 'binh.tt@iotco.com', now()),
+(3, 'Lê Hoàng Cường', 'Lê Hoàng', 'Cường', 'Lê Hoàng Cường', 'NV26003', '1991-03-10', 35, 2, 'Đà Nẵng', 'cuong.lh@iotco.com', now()),
+
+(4, 'Phạm Minh Đức', 'Phạm Minh', 'Đức', 'Phạm Minh Đức', 'NV26004', '1993-11-04', 33, 1, 'Cần Thơ', 'duc.pm@iotco.com', now()),
+(5, 'Hoàng Quốc Em', 'Hoàng Quốc', 'Em', 'Hoàng Quốc Em', 'NV26005', '1990-01-20', 36, 3, 'Hà Nội', 'em.hq@iotco.com', now()),
+(6, 'Đỗ Tuấn Phong', 'Đỗ Tuấn', 'Phong', 'Đỗ Tuấn Phong', 'NV26006', '1994-07-17', 32, 1, 'Hải Dương', 'phong.dt@iotco.com', now()),
+(7, 'Bùi Tuyết Giang', 'Bùi Tuyết', 'Giang', 'Bùi Tuyết Giang', 'NV26007', '1995-12-25', 31, 1, 'Nam Định', 'giang.bt@iotco.com', now()),
+(8, 'Nguyễn Thu Hà', 'Nguyễn Thu', 'Hà', 'Nguyễn Thu Hà', 'NV26008', '1992-02-28', 34, 2, 'Hà Nam', 'ha.nt@iotco.com', now()),
+(9, 'Trần Văn Hùng', 'Trần Văn', 'Hùng', 'Trần Văn Hùng', 'NV26009', '1991-09-09', 35, 2, 'Bắc Ninh', 'hung.tv@iotco.com', now()),
+(10, 'Lê Thị Khánh', 'Lê Thị', 'Khánh', 'Lê Thị Khánh', 'NV26010', '1990-10-30', 36, 3, 'Hà Nội', 'khanh.lt@iotco.com', now());
+
+-- Thêm 3 đơn vị
+INSERT INTO don_vi (id, ma_don_vi, ten_don_vi)
+VALUES
+(1, 'DV-RND', 'Phòng Nghiên cứu & Phát triển (R&D)'),
+(2, 'DV-PMO', 'Phòng Quản lý Dự án (PMO)'),
+(3, 'DV-HCNS', 'Phòng Hành chính Nhân sự');
+
+-- Thêm 3 chức vụ
+INSERT INTO chuc_vu (id, ma_chuc_vu, ten_chuc_vu)
+VALUES
+(1, 'CV-IOT', 'Kỹ sư Giải pháp IoT'),
+(2, 'CV-PM', 'Quản lý Dự án (Project Manager)'),
+(3, 'CV-OPER', 'Chuyên viên Vận hành Hệ thống');
+
+-- Thêm lịch sử công tác thực tế cho nhân viên
+INSERT INTO lich_su_cong_tac (id, nhan_vien_id, chuc_vu_id, don_vi_id, loai_chuc_vu)
+VALUES
+(1, 1, 1, 1, 'Chính'),       -- Nguyễn Văn An làm Kỹ sư IoT tại phòng R&D
+(2, 2, 2, 2, 'Chính'),       -- Trần Thị Bình làm PM tại phòng Dự án
+(3, 3, 1, 1, 'Chính'),       -- Lê Hoàng Cường làm Kỹ sư IoT tại phòng R&D
+(4, 4, 3, 3, 'Chính'),       -- Phạm Minh Đức làm Vận hành tại phòng HCNS
+(5, 5, 2, 2, 'Kiêm nhiệm'),  -- Hoàng Quốc Em làm PM Kiêm nhiệm tại phòng Dự án
+(6, 1, 2, 2, 'Kiêm nhiệm');  -- Nguyễn Văn An kiêm nhiệm PM bên phòng Dự án
+
+-- Thêm 3 chứng chỉ/bằng cấp chuẩn ngành IT/IoT
+INSERT INTO chung_chi_bang_cap (id, ma_chung_chi_bang_cap, ten_chung_chi_bang_cap)
+VALUES
+(1, 'CERT-AWS-IOT', 'AWS Certified Specialty - IoT'),
+(2, 'CERT-EMBED', 'Chứng chỉ Lập trình nhúng chuyên nghiệp - FPT'),
+(3, 'CERT-PMP', 'Project Management Professional (PMP)');
+
+-- Thêm danh sách chứng chỉ cho nhân viên (Khớp với năng lực chức vụ)
+INSERT INTO danh_sach_chung_chi_bang_cap (id, nhan_vien_id, chung_chi_bang_cap_id, ghi_chu)
+VALUES
+(1, 1, 1, 'Chứng chỉ quốc tế, đạt điểm 850/1000'), -- Kỹ sư An có chứng chỉ AWS IoT
+(2, 3, 2, 'Hoàn thành khóa học loại Xuất sắc'),     -- Kỹ sư Cường có chứng chỉ Nhúng
+(3, 2, 3, 'Gia hạn thành công, có giá trị đến 2029'); -- PM Bình có chứng chỉ PMP
+
+-- Thêm 3 dự án IoT thực tế
+INSERT INTO iot_project_assignment (id, name, description, nhan_vien_id, role, date_start, date_end, note)
+VALUES
+(1, 'Smart Factory - Hòa Phát', 'Triển khai hệ thống giám sát năng lượng và tự động hóa nhà máy', 1, 'Lead Engineer', '2026-01-02', '2026-08-30', 'Dự án trọng điểm quý I'),
+(2, 'Smart Building - Viettel Tower', 'Lắp đặt cảm biến môi trường và điều hòa thông minh tòa nhà', 2, 'Project Manager', '2026-02-15', '2026-11-15', 'Nghiệm thu theo từng giai đoạn'),
+(3, 'Smart Agriculture - Lâm Đồng', 'Giải pháp tưới tiêu tự động và theo dõi độ ẩm đất nông nghiệp', 3, 'IoT Developer', '2026-03-01', '2026-06-30', 'Hợp đồng triển khai giai đoạn 1');
+
+-- Thêm 3 log sử dụng thiết bị phần cứng IoT
+INSERT INTO iot_device_log (id, device_name, device_code, nhan_vien_id, event_type, event_date, note)
+VALUES
+(1, 'Raspberry Pi 4 Compute Module', 'GW-RPI4-01', 1, 'use', '2026-05-20 08:30:00', 'Cấu hình và cài đặt Edge OS'),
+(2, 'Cảm biến nhiệt độ độ ẩm công nghiệp SHT31', 'SEN-SHT31-05', 3, 'maintenance', '2026-05-21 14:15:00', 'Hiệu chuẩn lại cảm biến phòng Lab'),
+(3, 'Bộ điều khiển lập trình PLC Siemens S7-1200', 'PLC-S712-02', 1, 'error', '2026-05-22 10:05:00', 'Xung đột địa chỉ IP khi kết nối mạng nội bộ');

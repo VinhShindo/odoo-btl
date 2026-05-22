@@ -51,3 +51,6 @@ package.json
 /src/
 /venv/
 /venv_15_01/
+
+
+insert_data.sql

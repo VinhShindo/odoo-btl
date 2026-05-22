@@ -49,5 +49,7 @@
             sequence="4"
             action="action_danh_sach_chung_chi_bang_cap"
         />
+        <menuitem id="menu_iot_project_assignment" name="Phân công dự án IoT" parent="menu_root" action="action_iot_project_assignment" sequence="100"/>
+        <menuitem id="menu_iot_device_log" name="Lịch sử sử dụng thiết bị IoT" parent="menu_root" action="action_iot_device_log" sequence="101"/>
     </data>
 </odoo>
