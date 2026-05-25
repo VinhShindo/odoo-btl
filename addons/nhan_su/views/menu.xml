@@ -3,7 +3,7 @@
     <data>
         <menuitem
             id="menu_root"
-            name="QLNS"
+            name="Quản Lý Nhân Sự"
             sequence="0"/>
           
         <menuitem name="Quản lý nhân viên" 

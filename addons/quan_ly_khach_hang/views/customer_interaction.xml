@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="view_customer_interaction_form" model="ir.ui.view">
+            <field name="name">qlkh.customer_interaction.form</field>
+            <field name="model">qlkh.customer_interaction</field>
+            <field name="arch" type="xml">
+                <form>
+                    <sheet>
+                        <group>
+                            <field name="customer_id"/>
+                            <field name="date"/>
+                            <field name="type"/>
+                            <field name="content"/>
+                            <field name="nhan_vien_id"/>
+                            <field name="note"/>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+        <record id="view_customer_interaction_tree" model="ir.ui.view">
+            <field name="name">qlkh.customer_interaction.tree</field>
+            <field name="model">qlkh.customer_interaction</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="customer_id"/>
+                    <field name="date"/>
+                    <field name="type"/>
+                    <field name="nhan_vien_id"/>
+                </tree>
+            </field>
+        </record>
+        <record id="action_customer_interaction" model="ir.actions.act_window">
+            <field name="name">Lịch sử giao dịch</field>
+            <field name="res_model">qlkh.customer_interaction</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+    </data>
+</odoo>

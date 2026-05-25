@@ -1,28 +1,140 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <data>
-        <menuitem
-            id="menu_root"
-            name="QLVB"
-            sequence="0"/>
-          
-        <menuitem name="Quản lý văn bản đến" 
-            id="menu_van_ban_den" 
-            parent="menu_root" 
-            sequence="1"
-            action="action_van_ban_den"
-        />
-        <menuitem name="Quản lý văn bản đi" 
-            id="menu_van_ban_di" 
-            parent="menu_root" 
-            sequence="2"
-            action="action_van_ban_di"
-        />
-        <menuitem name="Danh mục loại văn bản" 
-            id="menu_loai_van_ban" 
-            parent="menu_root" 
-            sequence="2"
-            action="action_loai_van_ban"
-        />
-    </data>
+    <!-- ==================== ACTIONS ==================== -->
+    <!-- Action cho Văn bản đến -->
+    <record id="action_van_ban_den" model="ir.actions.act_window">
+        <field name="name">Văn bản đến</field>
+        <field name="res_model">van_ban_den</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="van_ban_den_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Thêm văn bản đến đầu tiên
+            </p>
+        </field>
+    </record>
+    
+    <!-- Action cho Văn bản đi -->
+    <record id="action_van_ban_di" model="ir.actions.act_window">
+        <field name="name">Văn bản đi</field>
+        <field name="res_model">van_ban_di</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="van_ban_di_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Thêm văn bản đi đầu tiên
+            </p>
+        </field>
+    </record>
+    
+    <!-- Action cho Loại văn bản -->
+    <record id="action_loai_van_ban" model="ir.actions.act_window">
+        <field name="name">Loại văn bản</field>
+        <field name="res_model">loai_van_ban</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="loai_van_ban_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Thêm loại văn bản đầu tiên
+            </p>
+        </field>
+    </record>
+
+    <!-- Action cho Văn bản (Document Management) -->
+    <record id="action_van_ban_document" model="ir.actions.act_window">
+        <field name="name">Tất cả văn bản</field>
+        <field name="res_model">van_ban.document</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="van_ban_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Thêm văn bản đầu tiên vào hệ thống
+            </p>
+        </field>
+    </record>
+
+    <!-- Action cho Thư mục văn bản -->
+    <record id="action_van_ban_folder" model="ir.actions.act_window">
+        <field name="name">Thư mục văn bản</field>
+        <field name="res_model">van_ban.folder</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Tạo thư mục để tổ chức văn bản
+            </p>
+        </field>
+    </record>
+
+    <!-- Action cho Quy trình xử lý văn bản -->
+    <record id="action_van_ban_routing" model="ir.actions.act_window">
+        <field name="name">Quy trình xử lý</field>
+        <field name="res_model">van_ban.routing</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Tạo quy trình xử lý văn bản
+            </p>
+        </field>
+    </record>
+
+    <!-- ==================== MENU ==================== -->
+    <!-- Menu Root -->
+    <menuitem id="menu_quan_ly_van_ban_root" 
+              name="Quản Lý Văn Bản" 
+              sequence="10"
+              web_icon="quan_ly_van_ban,static/description/icon.png"/>
+    
+    <!-- Menu con cấp 1: Quản lý văn bản điện tử -->
+    <menuitem id="menu_quan_ly_van_ban_dien_tu" 
+              name="Quản lý văn bản điện tử" 
+              parent="menu_quan_ly_van_ban_root" 
+              sequence="10"/>
+    
+    <menuitem id="menu_van_ban_document" 
+              name="Tất cả văn bản" 
+              parent="menu_quan_ly_van_ban_dien_tu" 
+              sequence="10"
+              action="action_van_ban_document"/>
+    
+    <menuitem id="menu_van_ban_folder" 
+              name="Thư mục văn bản" 
+              parent="menu_quan_ly_van_ban_dien_tu" 
+              sequence="20"
+              action="action_van_ban_folder"/>
+    
+    <menuitem id="menu_van_ban_routing" 
+              name="Quy trình xử lý" 
+              parent="menu_quan_ly_van_ban_dien_tu" 
+              sequence="30"
+              action="action_van_ban_routing"/>
+    
+    <!-- Menu con cấp 1: Công văn -->
+    <menuitem id="menu_cong_van" 
+              name="Công văn" 
+              parent="menu_quan_ly_van_ban_root" 
+              sequence="20"/>
+    
+    <menuitem id="menu_van_ban_den" 
+              name="Văn bản đến" 
+              parent="menu_cong_van" 
+              sequence="10"
+              action="action_van_ban_den"/>
+    
+    <menuitem id="menu_van_ban_di" 
+              name="Văn bản đi" 
+              parent="menu_cong_van" 
+              sequence="20"
+              action="action_van_ban_di"/>
+    
+    <!-- Menu con cấp 1: Danh mục -->
+    <menuitem id="menu_danh_muc" 
+              name="Danh mục" 
+              parent="menu_quan_ly_van_ban_root" 
+              sequence="30"/>
+    
+    <menuitem id="menu_loai_van_ban" 
+              name="Loại văn bản" 
+              parent="menu_danh_muc" 
+              sequence="10"
+              action="action_loai_van_ban"/>
 </odoo>

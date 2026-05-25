@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- FORM VIEW -->
+    <record id="view_van_ban_folder_form" model="ir.ui.view">
+        <field name="name">van_ban.folder.form</field>
+        <field name="model">van_ban.folder</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>Thư mục văn bản</h1>
+                    </div>
+                    <group col="4" string="Thông tin thư mục">
+                        <field name="name" required="1"/>
+                        <field name="parent_id"/>
+                    </group>
+                    <notebook>
+                        <page string="Văn bản trong thư mục">
+                            <field name="document_ids">
+                                <tree>
+                                    <field name="code"/>
+                                    <field name="name"/>
+                                    <field name="doc_type"/>
+                                    <field name="date"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Thư mục con">
+                            <field name="child_ids">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="document_count"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- TREE VIEW -->
+    <record id="view_van_ban_folder_tree" model="ir.ui.view">
+        <field name="name">van_ban.folder.tree</field>
+        <field name="model">van_ban.folder</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>
+                <field name="parent_id"/>
+                <field name="document_count" sum="Số văn bản"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- SEARCH VIEW -->
+    <record model="ir.ui.view" id="van_ban_folder_search">
+        <field name="model">van_ban.folder</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="parent_id"/>
+            </search>
+        </field>
+    </record>
+</odoo>

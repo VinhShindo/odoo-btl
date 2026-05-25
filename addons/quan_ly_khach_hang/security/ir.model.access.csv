@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_customer,qlkh.customer,model_qlkh_customer,base.group_user,1,1,1,1
+access_quotation,qlkh.quotation,model_qlkh_quotation,base.group_user,1,1,1,1
+access_contract,qlkh.contract,model_qlkh_contract,base.group_user,1,1,1,1
+access_customer_interaction,qlkh.customer_interaction,model_qlkh_customer_interaction,base.group_user,1,1,1,1

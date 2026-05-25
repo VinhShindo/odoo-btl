@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="view_contract_form" model="ir.ui.view">
+            <field name="name">qlkh.contract.form</field>
+            <field name="model">qlkh.contract</field>
+            <field name="arch" type="xml">
+                <form>
+                    <sheet>
+                        <group>
+                            <field name="name"/>
+                            <field name="customer_id"/>
+                            <field name="date_start"/>
+                            <field name="date_end"/>
+                            <field name="status"/>
+                            <field name="iot_device"/>
+                            <field name="file"/>
+                            <field name="file_name"/>
+                            <field name="note"/>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+        <record id="view_contract_tree" model="ir.ui.view">
+            <field name="name">qlkh.contract.tree</field>
+            <field name="model">qlkh.contract</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="name"/>
+                    <field name="customer_id"/>
+                    <field name="date_start"/>
+                    <field name="date_end"/>
+                    <field name="status"/>
+                </tree>
+            </field>
+        </record>
+        <record id="action_contract" model="ir.actions.act_window">
+            <field name="name">Hợp đồng</field>
+            <field name="res_model">qlkh.contract</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+    </data>
+</odoo>

@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ==================== FORM VIEW ==================== -->
+    <record id="view_van_ban_form" model="ir.ui.view">
+        <field name="name">van.ban.form</field>
+        <field name="model">van_ban.document</field>
+        <field name="arch" type="xml">
+            <form string="Văn bản">
+                <header>
+                    <button name="action_scan_ocr" type="object" string="Quét OCR" 
+                            class="btn-primary" 
+                            attrs="{'invisible': [('ocr_status', 'in', ['processing','completed'])]}"/>
+                    <button name="action_download_ocr_text" type="object" string="Tải OCR" 
+                            class="btn-secondary"
+                            attrs="{'invisible': [('ocr_text', '=', False)]}"/>
+                    <button name="action_view_ocr" type="object" string="Xem nội dung OCR" 
+                            class="btn-info"
+                            attrs="{'invisible': [('ocr_text', '=', False)]}"/>
+                    <field name="status" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Tiêu đề văn bản..."/>
+                        </h1>
+                        <group>
+                            <field name="code" readonly="1"/>
+                        </group>
+                    </div>
+                    
+                    <group name="main_info" string="Thông tin chính">
+                        <group>
+                            <field name="doc_type" widget="radio"/>
+                            <field name="customer_id" options="{'no_create': True}"/>
+                            <field name="nhan_vien_id" options="{'no_create': True}"/>
+                            <field name="folder_id"/>
+                        </group>
+                        <group>
+                            <field name="date"/>
+                            <field name="date_upload"/>
+                            <field name="status"/>
+                            <field name="ocr_status" widget="badge"/>
+                        </group>
+                    </group>
+                    
+                    <group name="file_info" string="Thông tin file">
+                        <field name="file" filename="file_name"/>
+                        <field name="file_name" invisible="1"/>
+                        <field name="file_size" widget="integer" string="Dung lượng (bytes)"/>
+                        <field name="file_type"/>
+                        <field name="total_pages" string="Số trang" 
+                               attrs="{'invisible': [('file_type', '!=', 'pdf')]}"/>
+                    </group>
+                    
+                    <notebook>
+                        <page string="Nội dung OCR" name="ocr_content">
+                            <!-- Hiển thị khi đã có OCR text -->
+                            <div class="alert alert-success" role="alert" 
+                                attrs="{'invisible': [('ocr_status', '!=', 'completed')]}">
+                                <i class="fa fa-check-circle"/> Đã quét OCR thành công!
+                            </div>
+                            
+                            <!-- Hiển thị khi đang xử lý -->
+                            <div class="alert alert-warning" role="alert" 
+                                attrs="{'invisible': [('ocr_status', '!=', 'processing')]}">
+                                <i class="fa fa-spinner fa-spin"/> Đang quét OCR, vui lòng chờ...
+                            </div>
+                            
+                            <!-- Hiển thị nội dung OCR -->
+                            <field name="ocr_text" nolabel="1" 
+                                placeholder="Nội dung quét từ văn bản..."
+                                attrs="{'invisible': [('ocr_status', 'in', ['not_started', 'processing'])]}"/>
+                            
+                            <!-- Hiển thị thông báo chưa quét -->
+                            <div class="alert alert-info" role="alert" 
+                                attrs="{'invisible': [('ocr_status', '!=', 'not_started')]}">
+                                <i class="fa fa-info-circle"/> Chưa quét OCR. Nhấn nút "Quét OCR" để bắt đầu.
+                            </div>
+                            
+                            <!-- Hiển thị thông báo lỗi -->
+                            <div class="alert alert-danger" role="alert" 
+                                attrs="{'invisible': [('ocr_status', '!=', 'failed')]}">
+                                <i class="fa fa-exclamation-triangle"/> Quét OCR thất bại. Vui lòng thử lại.
+                            </div>
+                        </page>
+                        
+                        <page string="Xem trước file" name="preview_file">
+                            <div t-if="record.file_name and record.file_type == 'pdf'">
+                                <iframe t-att-src="'/van_ban/preview/' + str(record.id)" width="100%" height="600px" style="border:1px solid #ccc;"></iframe>
+                            </div>
+                            <div t-if="record.file and record.file_type in ['jpg','jpeg','png','bmp']">
+                                <img t-att-src="'/web/content/van_ban.document/' + str(record.id) + '/file?download=false'" style="max-width:100%; max-height:600px; border:1px solid #ccc;"/>
+                            </div>
+                            <div t-if="not record.file">
+                                <span class="text-muted">Chưa có file đính kèm.</span>
+                            </div>
+                        </page>
+                        
+                        <page string="File đính kèm" name="attachments">
+                            <field name="attachment_ids">
+                                <tree string="File đính kèm">
+                                    <field name="name"/>
+                                    <field name="mimetype"/>
+                                    <field name="file_size" widget="integer"/>
+                                    <field name="create_date"/>
+                                </tree>
+                            </field>
+                        </page>
+                        
+                        <page string="Liên kết" name="relations">
+                            <group>
+                                <field name="related_contract_id"/>
+                                <field name="related_quotation_id"/>
+                            </group>
+                        </page>
+                        
+                        <page string="Ghi chú" name="notes">
+                            <field name="note" nolabel="1" placeholder="Ghi chú thêm..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ==================== TREE VIEW ==================== -->
+    <record id="view_van_ban_tree" model="ir.ui.view">
+        <field name="name">van.ban.tree</field>
+        <field name="model">van_ban.document</field>
+        <field name="arch" type="xml">
+            <tree string="Văn bản" decoration-success="ocr_status == 'completed'"
+                  decoration-warning="ocr_status == 'processing'"
+                  decoration-danger="ocr_status == 'failed'">
+                <field name="code" string="Mã"/>
+                <field name="name" string="Tiêu đề"/>
+                <field name="doc_type" string="Loại"/>
+                <field name="customer_id" string="Khách hàng"/>
+                <field name="nhan_vien_id" string="NV phụ trách"/>
+                <field name="file_type" string="Loại file" widget="badge"/>
+                <field name="ocr_status" string="OCR" widget="badge"/>
+                <field name="status" string="Trạng thái"/>
+                <field name="date" string="Ngày"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- ==================== SEARCH VIEW ==================== -->
+    <record model="ir.ui.view" id="van_ban_search">
+        <field name="model">van_ban.document</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" string="Tiêu đề"/>
+                <field name="code" string="Mã văn bản"/>
+                <field name="doc_type"/>
+                <field name="customer_id"/>
+                <field name="nhan_vien_id"/>
+                <field name="ocr_text" string="Nội dung OCR"/>
+                
+                <filter string="Có OCR" name="has_ocr" 
+                        domain="[('ocr_text','!=',False)]"/>
+                <filter string="Chưa OCR" name="no_ocr" 
+                        domain="[('ocr_text','=',False), ('file','!=',False)]"/>
+                <filter string="PDF" name="is_pdf" 
+                        domain="[('file_type','=', 'pdf')]"/>
+                <filter string="Hình ảnh" name="is_image" 
+                        domain="[('file_type','in', ['jpg','png','jpeg','bmp'])]"/>
+                
+                <separator/>
+                <filter name="group_by_doc_type" string="Loại văn bản" 
+                        context="{'group_by': 'doc_type'}"/>
+                <filter name="group_by_status" string="Trạng thái" 
+                        context="{'group_by': 'status'}"/>
+                <filter name="group_by_customer" string="Khách hàng" 
+                        context="{'group_by': 'customer_id'}"/>
+            </search>
+        </field>
+    </record>
+</odoo>
