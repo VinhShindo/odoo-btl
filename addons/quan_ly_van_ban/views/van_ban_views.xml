@@ -6,6 +6,12 @@
         <field name="model">van_ban.document</field>
         <field name="arch" type="xml">
             <form string="Văn bản">
+                <field name="id" invisible="1"/>
+                <field name="file_name" invisible="1"/>
+                <field name="file_type" invisible="1"/>
+                <field name="total_pages" invisible="1"/>
+                <field name="preview_html" invisible="1"/>
+
                 <header>
                     <button name="action_scan_ocr" type="object" string="Quét OCR" 
                             class="btn-primary" 
@@ -53,6 +59,13 @@
                     </group>
                     
                     <notebook>
+                        <page string="Xem trước file" name="preview_file">
+                            <field name="preview_html"
+                                widget="html"
+                                nolabel="1"
+                                readonly="1"/>
+                        </page>
+                        
                         <page string="Nội dung OCR" name="ocr_content">
                             <!-- Hiển thị khi đã có OCR text -->
                             <div class="alert alert-success" role="alert" 
@@ -81,18 +94,6 @@
                             <div class="alert alert-danger" role="alert" 
                                 attrs="{'invisible': [('ocr_status', '!=', 'failed')]}">
                                 <i class="fa fa-exclamation-triangle"/> Quét OCR thất bại. Vui lòng thử lại.
-                            </div>
-                        </page>
-                        
-                        <page string="Xem trước file" name="preview_file">
-                            <div t-if="record.file_name and record.file_type == 'pdf'">
-                                <iframe t-att-src="'/van_ban/preview/' + str(record.id)" width="100%" height="600px" style="border:1px solid #ccc;"></iframe>
-                            </div>
-                            <div t-if="record.file and record.file_type in ['jpg','jpeg','png','bmp']">
-                                <img t-att-src="'/web/content/van_ban.document/' + str(record.id) + '/file?download=false'" style="max-width:100%; max-height:600px; border:1px solid #ccc;"/>
-                            </div>
-                            <div t-if="not record.file">
-                                <span class="text-muted">Chưa có file đính kèm.</span>
                             </div>
                         </page>
                         
@@ -134,6 +135,7 @@
                 <field name="code" string="Mã"/>
                 <field name="name" string="Tiêu đề"/>
                 <field name="doc_type" string="Loại"/>
+                <field name="folder_id" string="Thư mục"/>
                 <field name="customer_id" string="Khách hàng"/>
                 <field name="nhan_vien_id" string="NV phụ trách"/>
                 <field name="file_type" string="Loại file" widget="badge"/>
@@ -152,10 +154,7 @@
                 <field name="name" string="Tiêu đề"/>
                 <field name="code" string="Mã văn bản"/>
                 <field name="doc_type"/>
-                <field name="customer_id"/>
-                <field name="nhan_vien_id"/>
-                <field name="ocr_text" string="Nội dung OCR"/>
-                
+                <field name="folder_id"/>
                 <filter string="Có OCR" name="has_ocr" 
                         domain="[('ocr_text','!=',False)]"/>
                 <filter string="Chưa OCR" name="no_ocr" 

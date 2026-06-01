@@ -5,6 +5,7 @@ import base64
 import logging
 import io
 from datetime import datetime
+from urllib.parse import quote
 
 _logger = logging.getLogger(__name__)
 
@@ -49,7 +50,7 @@ class VanBan(models.Model):
     # File Management
     file = fields.Binary('File', attachment=True)  # attachment=True giúp lưu riêng
     file_name = fields.Char('Tên file')
-    file_size = fields.Integer('Kích thước file', compute='_compute_file_size', store=False)
+    file_size = fields.Integer('Kích thước file', compute='_compute_file_size', store=True)
     file_type = fields.Char('Loại file', compute='_compute_file_type', store=True)  
     
     # OCR Data
@@ -82,6 +83,40 @@ class VanBan(models.Model):
     
     # Preview
     preview_url = fields.Char('URL xem trước', compute='_compute_preview_url')
+    preview_html = fields.Html(string='Preview', compute='_compute_preview_html', sanitize=False, store=False,)
+
+    @api.depends('file', 'file_name')
+    def _compute_preview_html(self):
+        for rec in self:
+            if not rec.file:
+                rec.preview_html = '<div class="alert alert-info">Chưa có file đính kèm.</div>'
+                continue
+            
+            if not rec.id:
+                rec.preview_html = '<div class="alert alert-warning">Vui lòng lưu bản ghi trước khi xem preview.</div>'
+                continue
+            
+            # PDF
+            if rec.file_type == 'pdf':
+                url = f"/van_ban/preview/{rec.id}"
+                rec.preview_html = f'''
+                    <div class="text-center">
+                        <iframe src="{url}" width="100%" height="700" style="border:1px solid #ccc; border-radius:5px;"></iframe>
+                        <div class="text-muted mt-2"><i class="fa fa-file-pdf-o text-danger"/> PDF Document</div>
+                        <div style="margin-top:10px"><a href="{url}" target="_blank" class="btn btn-secondary">Mở preview trong tab mới</a></div>
+                    </div>'''
+            
+            # IMAGE
+            elif rec.file_type in ['jpg', 'jpeg', 'png', 'bmp', 'gif']:
+                url = f"/web/image/{rec._name}/{rec.id}/file"
+                rec.preview_html = f'''
+                    <div class="text-center">
+                        <img src="{url}" style="max-width:100%; max-height:700px; border:1px solid #ccc; border-radius:5px;"/>
+                    </div>'''
+            
+            # UNSUPPORTED
+            else:
+                rec.preview_html = f'<div class="alert alert-warning">Không hỗ trợ preview file loại: <b>{rec.file_type}</b></div>'
     
     @api.model
     def create(self, vals):
@@ -93,7 +128,9 @@ class VanBan(models.Model):
     def _compute_file_size(self):
         for record in self:
             if record.file:
-                record.file_size = len(record.file) * 3 / 4  # Xấp xỉ dung lượng
+                import base64
+                decoded = base64.b64decode(record.file)
+                record.file_size = len(decoded)  # Kích thước bytes
             else:
                 record.file_size = 0
     
@@ -126,10 +163,19 @@ class VanBan(models.Model):
         self.ensure_one()
         return f'/van_ban/preview/{self.id}' if self.file and self.file_name else False
 
-    @api.depends('file')
+    @api.depends('file', 'file_name')
     def _compute_preview_url(self):
         for record in self:
-            record.preview_url = f'/van_ban/preview/{record.id}' if record.file and record.file_name else False
+            _logger.info(f"Computing preview URL for record {record.id} with file_name: {record.file_name}")
+            if record.file and record.file_name:
+                _logger.info(f"Record {record.id} has file, attempting to set preview URL")
+                try:
+                    record.preview_url = f'/van_ban/preview/{record.id}'
+                    _logger.info(f"Preview URL set to: {record.preview_url}")
+                except Exception:
+                    record.preview_url = f'/web/content/van_ban.document/{record.id}/file/{record.file_name}?download=false'
+            else:
+                record.preview_url = False
     
     def action_scan_ocr(self):
         """Quét OCR cho file (hỗ trợ PDF và ảnh)"""
@@ -149,10 +195,11 @@ class VanBan(models.Model):
                 'file_name': self.file_name or (self.name or 'uploaded.pdf'),
                 'name': self.name or (self.file_name or 'New Document'),
                 'doc_type': self.doc_type or 'khac',
+                'ocr_status': 'processing',
             }
             target = self.sudo().create(create_vals)
-
-        target.ocr_status = 'processing'
+        else:
+            target.sudo().write({'ocr_status': 'processing'})
 
         try:
             # Decode file
@@ -173,14 +220,16 @@ class VanBan(models.Model):
                 'ocr_status': 'completed'
             })
 
-            # Nếu chúng ta đã tạo một bản ghi mới, mở form của bản ghi đó để người dùng thấy kết quả
+            # Mở lại form của bản ghi đã được lưu để hiển thị đúng nội dung OCR và preview PDF.
             return {
                 'type': 'ir.actions.act_window',
                 'name': _('Văn bản'),
                 'res_model': 'van_ban.document',
                 'view_mode': 'form',
                 'res_id': target.id,
+                'views': [(self.env.ref('quan_ly_van_ban.view_van_ban_form').id, 'form')],
                 'target': 'current',
+                'context': {'form_view_initial_mode': 'edit'},
             }
 
         except Exception as e:

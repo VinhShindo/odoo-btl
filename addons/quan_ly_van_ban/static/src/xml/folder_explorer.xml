@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+    <div t-name="FolderExplorer" class="o_folder_explorer">
+        <div class="o_control_panel">
+            <ol class="breadcrumb o_breadcrumb">
+            </ol>
+            <div class="o_buttons">
+                <button class="btn btn-primary btn-create-folder">
+                    <i class="fa fa-plus"/> Tạo thư mục
+                </button>
+                <button class="btn btn-default btn-back">
+                    <i class="fa fa-arrow-left"/> Quay lại
+                </button>
+                <button class="btn btn-default btn-home">
+                    <i class="fa fa-home"/> Thư mục gốc
+                </button>
+            </div>
+        </div>
+        
+        <div class="o_content">
+            <h4><i class="fa fa-folder-open-o"/> Thư mục con</h4>
+            <div class="o_folders_container">
+            </div>
+            
+            <h4 class="mt-4"><i class="fa fa-file-text-o"/> Văn bản trong thư mục</h4>
+            <div class="o_documents_container">
+            </div>
+        </div>
+    </div>
+    
+    <div t-name="FolderItem">
+        <div class="col-md-2 col-sm-3 col-xs-4">
+            <div class="oe_kanban_global_click oe_kanban_folder_item" 
+                 data-folder-id="<t t-esc="folder.id"/>"
+                 style="cursor: pointer; text-align: center; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; margin: 5px; background: white; transition: all 0.3s;">
+                <div class="o_kanban_image">
+                    <i class="fa fa-folder-open-o" 
+                       style="font-size: 64px; color: #f4c542; margin-bottom: 10px;"/>
+                </div>
+                <div class="oe_kanban_details">
+                    <strong class="o_kanban_record_title" style="font-size: 14px; word-wrap: break-word;">
+                        <t t-esc="folder.name"/>
+                    </strong>
+                    <div class="text-muted" style="font-size: 12px;">
+                        <i class="fa fa-file-text-o"/> 
+                        <t t-esc="folder.document_count || 0"/> văn bản
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div t-name="DocumentItem">
+        <div class="col-md-3 col-sm-4 col-xs-6">
+            <div class="oe_kanban_global_click" 
+                 style="cursor: pointer; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; margin: 5px; background: white;">
+                <div style="text-align: center;">
+                    <i t-attf-class="fa {{ doc.file_type == 'pdf' ? 'fa-file-pdf-o text-danger' : (doc.file_type in ['jpg','png'] ? 'fa-file-image-o text-primary' : 'fa-file-text-o') }}" 
+                       style="font-size: 48px;"/>
+                </div>
+                <div class="mt-2">
+                    <strong><t t-esc="doc.name"/></strong>
+                    <div class="text-muted small">
+                        <t t-esc="doc.code"/>
+                    </div>
+                    <div class="text-muted small">
+                        <i class="fa fa-calendar"/> <t t-esc="doc.date"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</templates>

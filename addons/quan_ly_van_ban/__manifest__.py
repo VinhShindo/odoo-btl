@@ -10,14 +10,22 @@
     'data': [
         'security/ir.model.access.csv',
         'data/sequence.xml',
-        'views/van_ban_views.xml',        # Views cho van_ban.document
-        'views/van_ban_folder.xml',       # Views cho folder (THÊM MỚI)
-        'views/van_ban_routing.xml',      # Views cho routing (THÊM MỚI)
+        'views/van_ban_views.xml',
+        'views/van_ban_folder.xml',  # File này chứa model và views cho folder
+        'views/van_ban_folder_explorer.xml',
+        'views/van_ban_routing.xml',
         'views/van_ban_den.xml',
         'views/van_ban_di.xml',
         'views/loai_van_ban.xml',
-        'views/menu.xml',                 # Menu và actions (ĐẶT CUỐI CÙNG)
+        'views/menu.xml',  # Menu nên ở cuối cùng
     ],
+    'assets': {
+        'web.assets_backend': [
+            'quan_ly_van_ban/static/src/css/folder.css',
+            'quan_ly_van_ban/static/src/js/folder_explorer.js',
+            'quan_ly_van_ban/static/src/xml/folder_explorer.xml',
+        ],
+    },
     'installable': True,
     'application': True,
     'external_dependencies': {

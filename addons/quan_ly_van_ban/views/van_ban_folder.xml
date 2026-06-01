@@ -1,5 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- TREE VIEW DẠNG CÂY -->
+    <record id="view_van_ban_folder_tree" model="ir.ui.view">
+        <field name="name">van_ban.folder.tree</field>
+        <field name="model">van_ban.folder</field>
+        <field name="arch" type="xml">
+            <tree string="Thư mục văn bản" default_order="parent_left">
+                <field name="name" string="Tên thư mục"/>
+                <field name="complete_name" string="Đường dẫn đầy đủ"/>
+                <field name="document_count" string="Số văn bản" sum="Tổng"/>
+                <field name="parent_id" string="Thư mục cha"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- KANBAN VIEW -->
+    <record id="view_van_ban_folder_kanban" model="ir.ui.view">
+        <field name="name">van_ban.folder.kanban</field>
+        <field name="model">van_ban.folder</field>
+        <field name="arch" type="xml">
+            <kanban class="o_kanban_mobile">
+                <field name="name"/>
+                <field name="complete_name"/>
+                <field name="document_count"/>
+                <field name="parent_id"/>
+                <field name="child_ids"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_global_click">
+                            <div class="o_kanban_image">
+                                <i class="fa fa-folder-open-o" style="font-size: 48px; color: #7c7bad;"/>
+                            </div>
+                            <div class="oe_kanban_details">
+                                <strong class="o_kanban_record_title">
+                                    <field name="name"/>
+                                </strong>
+                                <div class="text-muted mt-1">
+                                    <small>
+                                        <i class="fa fa-file-text-o"/> 
+                                        <t t-esc="record.document_count.value or 0"/> văn bản
+                                        <t t-if="record.child_ids.value.length">
+                                             | <i class="fa fa-folder-o"/> 
+                                            <t t-esc="record.child_ids.value.length"/> thư mục con
+                                        </t>
+                                    </small>
+                                </div>
+                                <div t-if="record.complete_name.value != record.name.value" 
+                                     class="text-muted mt-1">
+                                    <small><i class="fa fa-sitemap"/> <field name="complete_name"/></small>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
     <!-- FORM VIEW -->
     <record id="view_van_ban_folder_form" model="ir.ui.view">
         <field name="name">van_ban.folder.form</field>
@@ -8,28 +65,96 @@
             <form>
                 <sheet>
                     <div class="oe_title">
-                        <h1>Thư mục văn bản</h1>
+                        <h1>
+                            <i class="fa fa-folder-open-o"/> 
+                            <field name="name" placeholder="Tên thư mục..."/>
+                        </h1>
+                        <div class="text-muted" style="margin-top: 5px;">
+                            <i class="fa fa-sitemap"/> 
+                            <field name="complete_name" readonly="1" nolabel="1"/>
+                        </div>
                     </div>
-                    <group col="4" string="Thông tin thư mục">
-                        <field name="name" required="1"/>
-                        <field name="parent_id"/>
+                    
+                    <group name="info" string="Thông tin thư mục">
+                        <group>
+                            <field name="parent_id" 
+                                   options="{'no_create': True, 'no_open': True}" 
+                                   placeholder="Chọn thư mục cha"
+                                   context="{'default_parent_id': parent_id}"/>
+                            <field name="document_count" readonly="1"/>
+                        </group>
                     </group>
+                    
                     <notebook>
-                        <page string="Văn bản trong thư mục">
-                            <field name="document_ids">
-                                <tree>
-                                    <field name="code"/>
-                                    <field name="name"/>
-                                    <field name="doc_type"/>
-                                    <field name="date"/>
+                        <page string="Văn bản trong thư mục" name="documents">
+                            <field name="document_ids" context="{'default_folder_id': active_id}">
+                                <tree string="Danh sách văn bản">
+                                    <field name="code" string="Mã" width="100"/>
+                                    <field name="name" string="Tiêu đề"/>
+                                    <field name="doc_type" string="Loại" width="80"/>
+                                    <field name="file_type" string="File" widget="badge" width="60"/>
+                                    <field name="ocr_status" string="OCR" widget="badge" width="80"/>
+                                    <field name="date" string="Ngày" width="100"/>
                                 </tree>
+                                <form string="Xem văn bản">
+
+                                <field name="id" invisible="1"/>
+                                <field name="file_name" invisible="1"/>
+                                <field name="file_type" invisible="1"/>
+                                <field name="total_pages" invisible="1"/>
+                                <field name="preview_html" invisible="1"/>
+
+
+                                    <sheet>
+                                        <div class="oe_title">
+                                            <h2>
+                                                <field name="name" readonly="1"/>
+                                            </h2>
+                                        </div>
+                                        <group col="2">
+                                            <group>
+                                                <field name="code" readonly="1"/>
+                                                <field name="doc_type" readonly="1"/>
+                                                <field name="date" readonly="1"/>
+                                            </group>
+                                            <group>
+                                                <field name="file_name" readonly="1"/>
+                                                <field name="file_type" readonly="1"/>
+                                                <field name="ocr_status" readonly="1" widget="badge"/>
+                                            </group>
+                                        </group>
+                                        <notebook>
+                                            <page string="Xem trước file" name="preview_file">
+                                                <field name="preview_html"
+                                                    widget="html"
+                                                    nolabel="1"
+                                                    readonly="1"/>
+                                            </page>
+
+                                            <page string="Nội dung OCR" name="ocr">
+                                                <div class="alert alert-info" t-if="record.ocr_status == 'not_started'">
+                                                    <i class="fa fa-info-circle"/> Chưa quét OCR
+                                                </div>
+                                                <div class="alert alert-warning" t-if="record.ocr_status == 'processing'">
+                                                    <i class="fa fa-spinner fa-spin"/> Đang quét OCR
+                                                </div>
+                                                <div class="alert alert-success" t-if="record.ocr_status == 'completed'">
+                                                    <i class="fa fa-check-circle"/> Đã quét OCR
+                                                </div>
+                                                <field name="ocr_text" readonly="1" nolabel="1" t-if="record.ocr_text"/>
+                                            </page>
+                                        </notebook>
+                                    </sheet>
+                                </form>
                             </field>
                         </page>
-                        <page string="Thư mục con">
-                            <field name="child_ids">
-                                <tree>
-                                    <field name="name"/>
-                                    <field name="document_count"/>
+                        
+                        <page string="Thư mục con" name="subfolders">
+                            <field name="child_ids" context="{'default_parent_id': active_id}">
+                                <tree string="Thư mục con">
+                                    <field name="name" string="Tên thư mục"/>
+                                    <field name="complete_name" string="Đường dẫn"/>
+                                    <field name="document_count" string="Số văn bản"/>
                                 </tree>
                             </field>
                         </page>
@@ -39,27 +164,40 @@
         </field>
     </record>
 
-    <!-- TREE VIEW -->
-    <record id="view_van_ban_folder_tree" model="ir.ui.view">
-        <field name="name">van_ban.folder.tree</field>
-        <field name="model">van_ban.folder</field>
-        <field name="arch" type="xml">
-            <tree>
-                <field name="name"/>
-                <field name="parent_id"/>
-                <field name="document_count" sum="Số văn bản"/>
-            </tree>
-        </field>
-    </record>
-
     <!-- SEARCH VIEW -->
-    <record model="ir.ui.view" id="van_ban_folder_search">
+    <record id="van_ban_folder_search" model="ir.ui.view">
+        <field name="name">van_ban.folder.search</field>
         <field name="model">van_ban.folder</field>
         <field name="arch" type="xml">
             <search>
-                <field name="name"/>
-                <field name="parent_id"/>
+                <field name="name" string="Tìm theo tên"/>
+                <field name="parent_id" string="Thư mục cha"/>
+                <field name="complete_name" string="Đường dẫn"/>
+                <filter string="Thư mục gốc" name="root" domain="[('parent_id','=',False)]"/>
+                <separator/>
+                <filter name="group_by_parent" string="Nhóm theo thư mục cha" 
+                        context="{'group_by': 'parent_id'}"/>
             </search>
+        </field>
+    </record>
+
+    <!-- ACTION -->
+    <record id="action_van_ban_folder" model="ir.actions.act_window">
+        <field name="name">Thư mục văn bản</field>
+        <field name="res_model">van_ban.folder</field>
+        <field name="view_mode">tree,kanban,form</field>
+        <field name="search_view_id" ref="van_ban_folder_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                <i class="fa fa-folder-open-o" style="font-size: 48px; color: #7c7bad;"/>
+            </p>
+            <p>
+                <strong>Tạo thư mục để tổ chức văn bản</strong>
+            </p>
+            <p>
+                Bạn có thể tạo cấu trúc thư mục lồng nhau để phân loại văn bản
+                theo dự án, phòng ban hoặc chủ đề.
+            </p>
         </field>
     </record>
 </odoo>

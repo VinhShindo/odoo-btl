@@ -6,7 +6,6 @@
         <field name="name">Văn bản đến</field>
         <field name="res_model">van_ban_den</field>
         <field name="view_mode">tree,form</field>
-        <field name="search_view_id" ref="van_ban_den_search"/>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Thêm văn bản đến đầu tiên
@@ -19,7 +18,6 @@
         <field name="name">Văn bản đi</field>
         <field name="res_model">van_ban_di</field>
         <field name="view_mode">tree,form</field>
-        <field name="search_view_id" ref="van_ban_di_search"/>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Thêm văn bản đi đầu tiên
@@ -32,7 +30,6 @@
         <field name="name">Loại văn bản</field>
         <field name="res_model">loai_van_ban</field>
         <field name="view_mode">tree,form</field>
-        <field name="search_view_id" ref="loai_van_ban_search"/>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Thêm loại văn bản đầu tiên
@@ -54,10 +51,11 @@
     </record>
 
     <!-- Action cho Thư mục văn bản -->
-    <record id="action_van_ban_folder" model="ir.actions.act_window">
+    <record id="action_van_ban_folder_main" model="ir.actions.act_window">
         <field name="name">Thư mục văn bản</field>
         <field name="res_model">van_ban.folder</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">kanban,tree,form</field>
+        <field name="search_view_id" ref="van_ban_folder_search"/>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Tạo thư mục để tổ chức văn bản
@@ -100,7 +98,7 @@
               name="Thư mục văn bản" 
               parent="menu_quan_ly_van_ban_dien_tu" 
               sequence="20"
-              action="action_van_ban_folder"/>
+              action="action_van_ban_folder_main"/>
     
     <menuitem id="menu_van_ban_routing" 
               name="Quy trình xử lý" 
