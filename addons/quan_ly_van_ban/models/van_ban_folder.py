@@ -17,7 +17,12 @@ class VanBanFolder(models.Model):
     child_ids = fields.One2many('van_ban.folder', 'parent_id', string='Thư mục con')
     document_ids = fields.One2many('van_ban.document', 'folder_id', string='Tài liệu')
     document_count = fields.Integer('Số tài liệu', compute='_compute_document_count')
-    complete_name = fields.Char('Đường dẫn đầy đủ', compute='_compute_complete_name', store=True)
+    complete_name = fields.Char('Đường dẫn đầy đủ', compute='_compute_complete_name', store=True, recursive=True)
+    folder_type = fields.Selection([
+        ('customer','Khách hàng'),
+        ('employee','Nhân viên'),
+        ('general','Chung')
+    ])
 
     @api.depends('document_ids')
     def _compute_document_count(self):

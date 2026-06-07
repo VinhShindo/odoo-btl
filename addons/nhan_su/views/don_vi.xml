@@ -7,7 +7,7 @@
             <field name="arch" type="xml">
                 <form>
                     <sheet>
-                        <div class="oe_read_only" style="font-size:25px">Đơn vị</div>
+                        <div class="oe_read_only" style="font-size:25px">Phòng ban</div>
                         <group col="4" string="Thông tin chung">
                             <field name="ma_don_vi"/>
                             <field name="ten_don_vi"/>
@@ -39,7 +39,7 @@
         </record>
 
         <record id="action_don_vi" model="ir.actions.act_window">
-            <field name="name">Đơn vị</field>
+            <field name="name">Phòng ban</field>
             <field name="res_model">don_vi</field>
             <field name="view_mode">tree,form</field>
             <field name="search_view_id" ref = "don_vi_search"/>

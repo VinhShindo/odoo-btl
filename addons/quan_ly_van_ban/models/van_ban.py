@@ -80,6 +80,42 @@ class VanBan(models.Model):
     date = fields.Date('Ngày tạo', default=fields.Date.context_today, tracking=True)
     date_upload = fields.Datetime('Ngày upload', default=fields.Datetime.now)
     note = fields.Text('Ghi chú')
+    version_ids = fields.One2many(
+        'van_ban.version',
+        'document_id',
+        string='Phiên bản'
+    )
+    
+    current_version = fields.Char(
+        string='Phiên bản hiện tại',
+        default='v1',
+        tracking=True
+    )
+
+    approval_ids = fields.One2many(
+        'van_ban.approval',
+        'document_id',
+        string='Lịch sử phê duyệt'
+    )
+
+    is_locked = fields.Boolean(
+        string='Khóa chỉnh sửa',
+        default=False
+    )
+
+    approved_date = fields.Datetime(
+        string='Ngày duyệt'
+    )
+
+    approved_by = fields.Many2one(
+        'hr.employee',
+        string='Người duyệt'
+    )
+    source_module = fields.Selection([
+    ('crm', 'CRM'),
+    ('hrm', 'HRM'),
+    ('manual', 'Thủ công')
+], default='manual')
     
     # Preview
     preview_url = fields.Char('URL xem trước', compute='_compute_preview_url')
@@ -124,6 +160,24 @@ class VanBan(models.Model):
             vals['code'] = self.env['ir.sequence'].next_by_code('van_ban.document') or _('New')
         return super(VanBan, self).create(vals)
     
+    def write(self, vals):
+        for rec in self:
+
+            if rec.is_locked:
+
+                blocked_fields = {
+                    'file',
+                    'name',
+                    'doc_type'
+                }
+
+                if blocked_fields.intersection(vals.keys()):
+                    raise UserError(
+                        'Văn bản đã duyệt, không được chỉnh sửa.'
+                    )
+
+        return super().write(vals)
+    
     @api.depends('file')
     def _compute_file_size(self):
         for record in self:
@@ -162,6 +216,7 @@ class VanBan(models.Model):
         """Lấy URL preview cho file"""
         self.ensure_one()
         return f'/van_ban/preview/{self.id}' if self.file and self.file_name else False
+    
 
     @api.depends('file', 'file_name')
     def _compute_preview_url(self):
@@ -365,3 +420,23 @@ class VanBan(models.Model):
             'url': f'/web/content/{attachment.id}?download=true',
             'target': 'self',
         }
+
+
+class QlkhCustomer(models.Model):
+    _inherit = 'qlkh.customer'
+
+    van_ban_ids = fields.One2many(
+        'van_ban.document',
+        'customer_id',
+        string='Văn bản'
+    )
+
+
+class QlkhContract(models.Model):
+    _inherit = 'qlkh.contract'
+
+    van_ban_ids = fields.One2many(
+        'van_ban.document',
+        'related_contract_id',
+        string='Văn bản liên quan'
+    )

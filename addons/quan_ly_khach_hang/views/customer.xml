@@ -8,16 +8,34 @@
                 <form>
                     <sheet>
                         <group>
-                            <field name="name"/>
-                            <field name="code"/>
-                            <field name="customer_type"/>
-                            <field name="status"/>
-                            <field name="nhan_vien_phu_trach_id"/>
-                            <field name="iot_device"/>
-                            <field name="email"/>
-                            <field name="phone"/>
+                            <group>
+                                <field name="name"/>
+                                <field name="code"/>
+                                <field name="customer_type"/>
+                                <field name="status" widget="statusbar"/>
+                            </group>
+                            <group>
+                                <field name="nhan_vien_phu_trach_id"/>
+                                <field name="email"/>
+                                <field name="phone"/>
+                                <field name="iot_device"/>
+                            </group>
+                        </group>
+                        <group>
                             <field name="address"/>
                             <field name="note"/>
+                        </group>
+                        <group string="Chỉ số khách hàng">
+                            <field name="interaction_count"
+                                readonly="1"/>
+                            <field name="quotation_count"
+                                readonly="1"/>
+                            <field name="contract_count"
+                                readonly="1"/>
+                            <field name="revenue_total"
+                                readonly="1"/>
+                            <field name="customer_score"
+                                readonly="1"/>
                         </group>
                     </sheet>
                 </form>
@@ -27,12 +45,16 @@
             <field name="name">qlkh.customer.tree</field>
             <field name="model">qlkh.customer</field>
             <field name="arch" type="xml">
-                <tree>
+                <tree decoration-success="status=='thanh_cong'"
+                    decoration-danger="status=='that_bai'"
+                    decoration-warning="status=='dam_phan'">
                     <field name="name"/>
                     <field name="code"/>
                     <field name="customer_type"/>
                     <field name="status"/>
                     <field name="nhan_vien_phu_trach_id"/>
+                    <field name="customer_score"/>
+                    <field name="revenue_total"/>
                 </tree>
             </field>
         </record>

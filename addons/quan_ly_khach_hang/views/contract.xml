@@ -6,18 +6,50 @@
             <field name="model">qlkh.contract</field>
             <field name="arch" type="xml">
                 <form>
+                <header>
+
+    <button
+        name="action_submit"
+        type="object"
+        string="Gửi duyệt"
+        class="btn-primary"
+        invisible="status != 'nhap'"/>
+
+    <button
+        name="action_approve"
+        type="object"
+        string="Phê duyệt"
+        class="btn-primary"
+        invisible="status != 'cho_duyet'"/>
+
+    <button
+        name="action_activate"
+        type="object"
+        string="Kích hoạt"
+        class="btn-primary"
+        invisible="status != 'da_duyet'"/>
+
+</header>
                     <sheet>
                         <group>
-                            <field name="name"/>
-                            <field name="customer_id"/>
-                            <field name="date_start"/>
-                            <field name="date_end"/>
-                            <field name="status"/>
-                            <field name="iot_device"/>
-                            <field name="file"/>
-                            <field name="file_name"/>
-                            <field name="note"/>
-                        </group>
+    <field name="name"/>
+    <field name="customer_id"/>
+    <field name="quotation_id"/>
+
+    <field name="date_start"/>
+    <field name="date_end"/>
+
+    <field name="contract_value"/>
+
+    <field name="status" widget="statusbar"/>
+</group>
+
+<group>
+    <field name="iot_device"/>
+    <field name="file"/>
+    <field name="file_name"/>
+    <field name="note"/>
+</group>
                     </sheet>
                 </form>
             </field>
@@ -26,12 +58,16 @@
             <field name="name">qlkh.contract.tree</field>
             <field name="model">qlkh.contract</field>
             <field name="arch" type="xml">
-                <tree>
+                <tree
+    decoration-success="status=='hieu_luc'"
+    decoration-warning="status=='sap_het_han'"
+    decoration-danger="status=='het_han'">
                     <field name="name"/>
                     <field name="customer_id"/>
                     <field name="date_start"/>
                     <field name="date_end"/>
                     <field name="status"/>
+                    <field name="contract_value"/>
                 </tree>
             </field>
         </record>

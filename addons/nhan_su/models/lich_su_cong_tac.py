@@ -6,7 +6,7 @@ class LichSuCongTac(models.Model):
     _description = 'Bảng chứa thông tin lịch sử công tác'
 
     chuc_vu_id = fields.Many2one("chuc_vu", string="Chức vụ")
-    don_vi_id = fields.Many2one("don_vi", string="Đơn vị")
+    don_vi_id = fields.Many2one("don_vi", string="Phòng ban / Đơn vị")
     loai_chuc_vu = fields.Selection(
         [
             ("Chính", "Chính"), 

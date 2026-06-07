@@ -23,10 +23,25 @@ class VanBanRouting(models.Model):
 
     def action_set_done(self):
         for rec in self:
+
             rec.stage = 'done'
-            # mark document as approved when routing completes
+
             if rec.document_id:
-                rec.document_id.status = 'approved'
+
+                employee = rec.assigned_to
+
+                rec.document_id.write({
+                    'status': 'approved',
+                    'approved_date': fields.Datetime.now(),
+                    'approved_by': employee.id if employee else False,
+                    'is_locked': True
+                })
+
+                self.env['van_ban.approval'].create({
+                    'document_id': rec.document_id.id,
+                    'approver_id': employee.id if employee else False,
+                    'status': 'approved'
+                })
 
     def action_reject(self):
         for rec in self:

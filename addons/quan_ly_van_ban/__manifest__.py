@@ -6,7 +6,7 @@
     'description': 'Module quản lý văn bản hỗ trợ OCR cho PDF và ảnh, lưu trữ đầy đủ',
     'author': 'FIT-DNU',
     'website': 'https://ttdn1501.aiotlabdnu.xyz/web',
-    'depends': ['base', 'nhan_su', 'quan_ly_khach_hang', 'mail'],
+    'depends': ['base', 'quan_ly_khach_hang', 'mail'],
     'data': [
         'security/ir.model.access.csv',
         'data/sequence.xml',
@@ -28,6 +28,7 @@
     },
     'installable': True,
     'application': True,
+    'license': 'LGPL-3',
     'external_dependencies': {
         'python': ['pytesseract', 'Pillow', 'PyPDF2', 'pdf2image'],
     },

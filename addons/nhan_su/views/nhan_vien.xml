@@ -2,30 +2,77 @@
 <odoo>
     <data>
         <record id="view_nhan_vien_form" model="ir.ui.view">
-            <field name="name">nhan_vien</field>
+            <field name="name">nhan_vien.form</field>
             <field name="model">hr.employee</field>
+            <field name="priority">1</field>
             <field name="arch" type="xml">
                 <form>
                     <sheet>
-                        <div class="oe_read_only" style="font-size:25px">Nhân viên</div>
-                        <group col="4" string="Thông tin chung">
-                            <field name="ho_ten_dem"/>
-                            <field name="ten"/>
-                            <field name="ho_va_ten"/>
-                            <field name="ma_dinh_danh"/>
+                        <div class="oe_button_box" name="button_box">
+                            <button name="toggle_active" type="object" class="oe_stat_button" icon="fa-archive">
+                                <field name="active" widget="boolean_button" options='{"terminology": "archive"}'/>
+                            </button>
+                        </div>
+                        <div class="oe_title">
+                            <h1>
+                                <field name="ho_va_ten" placeholder="Họ và tên"/>
+                            </h1>
+                        </div>
+                        <group col="4" string="Thông tin cơ bản">
+                            <field name="ho_ten_dem" placeholder="Họ tên đệm"/>
+                            <field name="ten" placeholder="Tên"/>
+                            <field name="ma_dinh_danh" placeholder="Mã định danh"/>
+                            <field name="work_email" widget="email"/>
+                            <field name="work_phone" widget="phone"/>
                             <field name="birthday"/>
-                            <field name="tuoi"/>
-                            <field name="so_nguoi_bang_tuoi"/>
-                            <field name="que_quan"/>
-                            <field name="work_email"/>
-                            <field name="image_1920" widget="image"/>
+                            <field name="tuoi" readonly="1"/>
+                        </group>
+                        <group col="4" string="Thông tin công việc">
+                            <field name="don_vi_id"/>
+                            <field name="company_id" options="{'no_create': True}"/>
+                        </group>
+                        <group col="4" string="Thông tin chi tiết">
+                            <field name="que_quan" placeholder="Quê quán"/>
+                            <field name="so_nguoi_bang_tuoi" readonly="1"/>
+                            <field name="image_1920" widget="image" class="oe_avatar"/>
+                        </group>
+                        <group col="4" string="Hồ sơ điện tử">
+                            <field name="folder_id" readonly="1"/>
                         </group>
                         <notebook>
-                            <page string="Danh sách lịch sử công tác">
-                                <field name="lich_su_cong_tac_ids"/>
+                            <page string="KPI &amp; Khách hàng">
+                                <group col="2">
+                                    <group string="Số lượng">
+                                        <field name="so_khach_hang_phu_trach" readonly="1"/>
+                                        <field name="so_bao_gia" readonly="1"/>
+                                        <field name="so_hop_dong" readonly="1"/>
+                                        <field name="so_van_ban_xu_ly" readonly="1"/>
+                                    </group>
+                                    <group string="KPI">
+                                        <field name="diem_kpi" readonly="1"/>
+                                        <field name="muc_tieu_doanh_so" readonly="1"/>
+                                        <field name="tien_do_kpi" readonly="1"/>
+                                    </group>
+                                </group>
+                                <field name="ghi_chu_nhan_su" readonly="1" nolabel="1"/>
                             </page>
-                            <page string="Danh sách chứng chỉ bằng cấp">
-                                <field name="danh_sach_chung_chi_bang_cap_ids"/>
+                            <page string="Lịch sử công tác">
+                                <field name="lich_su_cong_tac_ids">
+                                    <tree>
+                                        <field name="chuc_vu_id"/>
+                                        <field name="don_vi_id"/>
+                                        <field name="loai_chuc_vu"/>
+                                    </tree>
+                                </field>
+                            </page>
+                            <page string="Chứng chỉ &amp; Bằng cấp">
+                                <field name="danh_sach_chung_chi_bang_cap_ids">
+                                    <tree>
+                                        <field name="chung_chi_bang_cap_id"/>
+                                        <field name="ghi_chu"/>
+                                        <field name="ma_dinh_danh"/>
+                                    </tree>
+                                </field>
                             </page>
                         </notebook>
                     </sheet>
@@ -34,19 +81,16 @@
         </record>
 
         <record id="view_nhan_vien_tree" model="ir.ui.view">
-            <field name="name">nhan_vien</field>
+            <field name="name">nhan_vien.tree</field>
             <field name="model">hr.employee</field>
+            <field name="priority">1</field>
             <field name="arch" type="xml">
                 <tree>
-                    <field name="ma_dinh_danh"/>
-                    <field name="ho_ten_dem"/>
-                    <field name="ten"/>
                     <field name="ho_va_ten"/>
-                    <field name="birthday"/>
-                    <field name="tuoi"/>
-                    <field name="so_nguoi_bang_tuoi"/>
-                    <field name="que_quan"/>
+                    <field name="ma_dinh_danh"/>
+                    <field name="don_vi_id"/>
                     <field name="work_email"/>
+                    <field name="tuoi"/>
                 </tree>
             </field>
         </record>
@@ -61,6 +105,7 @@
                     <field name="tuoi"/>
                     <field name="que_quan"/>
                     <field name="work_email"/>
+                    <field name="don_vi_id"/>
                 </search>
             </field>
         </record>
@@ -69,7 +114,9 @@
             <field name="name">Nhân viên</field>
             <field name="res_model">hr.employee</field>
             <field name="view_mode">tree,form</field>
-            <field name="search_view_id" ref = "nhan_vien_search"/>
+            <field name="views" eval="[(ref('view_nhan_vien_tree'), 'tree'), (ref('view_nhan_vien_form'), 'form')]"/>
+            <field name="search_view_id" ref="nhan_vien_search"/>
+            <field name="view_id" ref="view_nhan_vien_tree" />
         </record>
     </data>
 </odoo>

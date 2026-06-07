@@ -16,11 +16,11 @@
         <menuitem name="Danh mục chung" 
             id="menu_danh_muc_chung" 
             parent="menu_root" 
-            sequence="1"
+            sequence="2"
         />
 
-        <menuitem name="Danh mục đơn vị" 
-            id="menu_don_vi" 
+        <menuitem name="Danh mục phòng ban" 
+            id="menu_phong_ban" 
             parent="menu_danh_muc_chung" 
             sequence="1"
             action="action_don_vi"
@@ -37,19 +37,39 @@
             sequence="3"
             action="action_chung_chi_bang_cap"
         />
+
+        <menuitem name="Quản lý hồ sơ" 
+            id="menu_quan_ly_ho_so" 
+            parent="menu_root" 
+            sequence="3"
+        />
+
         <menuitem name="Lịch sử công tác" 
             id="menu_lich_su_cong_tac" 
-            parent="menu_root" 
-            sequence="4"
+            parent="menu_quan_ly_ho_so" 
+            sequence="1"
             action="action_lich_su_cong_tac"
         />
         <menuitem name="Danh sách chứng chỉ, bằng cấp" 
             id="menu_danh_sach_chung_chi_bang_cap" 
-            parent="menu_root" 
-            sequence="4"
+            parent="menu_quan_ly_ho_so" 
+            sequence="2"
             action="action_danh_sach_chung_chi_bang_cap"
         />
-        <menuitem id="menu_iot_project_assignment" name="Phân công dự án IoT" parent="menu_root" action="action_iot_project_assignment" sequence="100"/>
-        <menuitem id="menu_iot_device_log" name="Lịch sử sử dụng thiết bị IoT" parent="menu_root" action="action_iot_device_log" sequence="101"/>
+        <menuitem name="Hồ sơ điện tử" 
+            id="menu_ho_so_dien_tu" 
+            parent="menu_quan_ly_ho_so" 
+            sequence="3"
+            action="action_ho_so_dien_tu"
+        />
+
+        <menuitem name="Quản lý IoT" 
+            id="menu_quan_ly_iot" 
+            parent="menu_root" 
+            sequence="100"
+        />
+
+        <menuitem id="menu_iot_project_assignment" name="Phân công dự án IoT" parent="menu_quan_ly_iot" action="action_iot_project_assignment" sequence="1"/>
+        <menuitem id="menu_iot_device_log" name="Lịch sử sử dụng thiết bị IoT" parent="menu_quan_ly_iot" action="action_iot_device_log" sequence="2"/>
     </data>
 </odoo>

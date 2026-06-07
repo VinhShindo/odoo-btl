@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="view_ho_so_dien_tu_form" model="ir.ui.view">
+            <field name="name">ho_so_dien_tu.form</field>
+            <field name="model">nhan_su.ho_so_dien_tu</field>
+            <field name="arch" type="xml">
+                <form string="Hồ sơ điện tử">
+                    <sheet>
+                        <group col="2">
+                            <field name="ho_so"/>
+                            <field name="loai_ho_so"/>
+                            <field name="nhan_vien_id"/>
+                            <field name="ten_file"/>
+                            <field name="van_ban_id"/>
+                            <field name="ngay_dang_tai"/>
+                        </group>
+                        <group>
+                            <field name="tep_dinh_kem" filename="ten_file"/>
+                        </group>
+                        <group>
+                            <field name="note"/>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="view_ho_so_dien_tu_tree" model="ir.ui.view">
+            <field name="name">ho_so_dien_tu.tree</field>
+            <field name="model">nhan_su.ho_so_dien_tu</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="ho_so"/>
+                    <field name="nhan_vien_id"/>
+                    <field name="loai_ho_so"/>
+                    <field name="ten_file"/>
+                    <field name="ngay_dang_tai"/>
+                </tree>
+            </field>
+        </record>
+
+        <record model="ir.ui.view" id="ho_so_dien_tu_search">
+            <field name="model">nhan_su.ho_so_dien_tu</field>
+            <field name="arch" type="xml">
+                <search>
+                    <field name="ho_so"/>
+                    <field name="nhan_vien_id"/>
+                    <field name="loai_ho_so"/>
+                    <field name="ngay_dang_tai"/>
+                </search>
+            </field>
+        </record>
+
+        <record id="action_ho_so_dien_tu" model="ir.actions.act_window">
+            <field name="name">Hồ sơ điện tử</field>
+            <field name="res_model">nhan_su.ho_so_dien_tu</field>
+            <field name="view_mode">tree,form</field>
+            <field name="search_view_id" ref="ho_so_dien_tu_search"/>
+        </record>
+    </data>
+</odoo>

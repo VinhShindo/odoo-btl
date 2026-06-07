@@ -17,9 +17,10 @@
     # for the full list
     'category': 'Human Resources',
     'version': '0.1',
+    'license': 'LGPL-3',
 
     # any module necessary for this one to work correctly
-    'depends': ['base', 'hr'],
+    'depends': ['base', 'hr', 'quan_ly_van_ban', 'quan_ly_khach_hang'],
 
     # always loaded
     'data': [
@@ -30,6 +31,7 @@
         'views/lich_su_cong_tac.xml',
         'views/chung_chi_bang_cap.xml',
         'views/danh_sach_chung_chi_bang_cap.xml',
+        'views/ho_so_dien_tu.xml',
         'views/menu.xml',
         'views/iot_project_assignment.xml',
         'views/iot_device_log.xml',

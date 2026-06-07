@@ -4,6 +4,7 @@ access_chuc_vu,chuc_vu.chuc_vu,model_chuc_vu,base.group_user,1,1,1,1
 access_lich_su_cong_tac,lich_su_cong_tac.lich_su_cong_tac,model_lich_su_cong_tac,base.group_user,1,1,1,1
 access_chung_chi_bang_cap,chung_chi_bang_cap.chung_chi_bang_cap,model_chung_chi_bang_cap,base.group_user,1,1,1,1
 access_danh_sach_chung_chi_bang_cap,danh_sach_chung_chi_bang_cap.danh_sach_chung_chi_bang_cap,model_danh_sach_chung_chi_bang_cap,base.group_user,1,1,1,1
+access_ho_so_dien_tu,ho_so_dien_tu.ho_so_dien_tu,model_nhan_su_ho_so_dien_tu,base.group_user,1,1,1,1
 access_hr_employee,nhan_su.hr_employee,model_hr_employee,base.group_user,1,1,1,1
 access_iot_project_assignment,iot_project_assignment,model_iot_project_assignment,base.group_user,1,1,1,1
 access_iot_device_log,iot_device_log,model_iot_device_log,base.group_user,1,1,1,1
