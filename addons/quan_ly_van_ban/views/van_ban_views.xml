@@ -36,7 +36,7 @@
                     
                     <group name="main_info" string="Thông tin chính">
                         <group>
-                            <field name="doc_type" widget="radio"/>
+                            <field name="loai_van_ban_id" options="{'no_create': True}"/>
                             <field name="customer_id" options="{'no_create': True}"/>
                             <field name="nhan_vien_id" options="{'no_create': True}"/>
                             <field name="folder_id"/>
@@ -134,7 +134,7 @@
                   decoration-danger="ocr_status == 'failed'">
                 <field name="code" string="Mã"/>
                 <field name="name" string="Tiêu đề"/>
-                <field name="doc_type" string="Loại"/>
+                <field name="loai_van_ban_id" string="Loại"/>
                 <field name="folder_id" string="Thư mục"/>
                 <field name="customer_id" string="Khách hàng"/>
                 <field name="nhan_vien_id" string="NV phụ trách"/>
@@ -153,7 +153,7 @@
             <search>
                 <field name="name" string="Tiêu đề"/>
                 <field name="code" string="Mã văn bản"/>
-                <field name="doc_type"/>
+                <field name="loai_van_ban_id"/>
                 <field name="folder_id"/>
                 <filter string="Có OCR" name="has_ocr" 
                         domain="[('ocr_text','!=',False)]"/>
@@ -165,8 +165,8 @@
                         domain="[('file_type','in', ['jpg','png','jpeg','bmp'])]"/>
                 
                 <separator/>
-                <filter name="group_by_doc_type" string="Loại văn bản" 
-                        context="{'group_by': 'doc_type'}"/>
+                <filter name="group_by_loai_van_ban" string="Loại văn bản" 
+                        context="{'group_by': 'loai_van_ban_id'}"/>
                 <filter name="group_by_status" string="Trạng thái" 
                         context="{'group_by': 'status'}"/>
                 <filter name="group_by_customer" string="Khách hàng" 

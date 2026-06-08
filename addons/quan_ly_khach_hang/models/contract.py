@@ -32,7 +32,7 @@ class Contract(models.Model):
         'qlkh.quotation',
         string='Báo giá nguồn'
     )
-
+    
     document_count = fields.Integer(
         compute='_compute_document_count'
     )

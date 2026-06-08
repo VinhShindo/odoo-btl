@@ -38,7 +38,9 @@ class VanBan(models.Model):
         ('phu_luc', 'Phụ lục'),
         ('phap_ly', 'Hồ sơ pháp lý'),
         ('khac', 'Khác')
-    ], string='Loại văn bản', default='khac', required=True, tracking=True)
+    ], string='Loại văn bản (tạm)', default='khac', required=True, tracking=True)
+
+    loai_van_ban_id = fields.Many2one('loai_van_ban', string='Loại văn bản', tracking=True)
     
     # Relationships
     customer_id = fields.Many2one('qlkh.customer', string='Khách hàng', tracking=True)
@@ -96,6 +98,17 @@ class VanBan(models.Model):
         'van_ban.approval',
         'document_id',
         string='Lịch sử phê duyệt'
+    )
+
+    van_ban_den_ids = fields.One2many(
+        'van_ban_den',
+        'document_id',
+        string='Văn bản đến'
+    )
+    van_ban_di_ids = fields.One2many(
+        'van_ban_di',
+        'document_id',
+        string='Văn bản đi'
     )
 
     is_locked = fields.Boolean(
@@ -399,7 +412,7 @@ class VanBan(models.Model):
         ===================================
         Mã: {self.code}
         Tiêu đề: {self.name}
-        Loại: {dict(self._fields['doc_type'].selection).get(self.doc_type)}
+        Loại: {self.loai_van_ban_id.ten_loai_van_ban if self.loai_van_ban_id else dict(self._fields['doc_type'].selection).get(self.doc_type)}
         Ngày tạo: {self.date}
         
         ===================================

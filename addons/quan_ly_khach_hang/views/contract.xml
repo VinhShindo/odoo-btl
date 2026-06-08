@@ -6,75 +6,112 @@
             <field name="model">qlkh.contract</field>
             <field name="arch" type="xml">
                 <form>
-                <header>
-
-    <button
-        name="action_submit"
-        type="object"
-        string="Gửi duyệt"
-        class="btn-primary"
-        invisible="status != 'nhap'"/>
-
-    <button
-        name="action_approve"
-        type="object"
-        string="Phê duyệt"
-        class="btn-primary"
-        invisible="status != 'cho_duyet'"/>
-
-    <button
-        name="action_activate"
-        type="object"
-        string="Kích hoạt"
-        class="btn-primary"
-        invisible="status != 'da_duyet'"/>
-
-</header>
+                    <header>
+                        <button
+                            name="action_submit"
+                            type="object"
+                            string="Gửi duyệt"
+                            class="btn-primary"
+                            attrs="{'invisible': [('status', 'not in', ['nhap'])]}"/>
+                        <button
+                            name="action_approve"
+                            type="object"
+                            string="Phê duyệt"
+                            class="btn-primary"
+                            attrs="{'invisible': [('status', 'not in', ['cho_duyet'])]}"/>
+                        <button
+                            name="action_activate"
+                            type="object"
+                            string="Kích hoạt"
+                            class="btn-primary"
+                            attrs="{'invisible': [('status', 'not in', ['da_duyet'])]}"/>
+                    </header>   
                     <sheet>
+                        <div class="oe_title">
+                            <h1>
+                                <field name="name" placeholder="Số hợp đồng..."/>
+                            </h1>
+                        </div>
                         <group>
-    <field name="name"/>
-    <field name="customer_id"/>
-    <field name="quotation_id"/>
-
-    <field name="date_start"/>
-    <field name="date_end"/>
-
-    <field name="contract_value"/>
-
-    <field name="status" widget="statusbar"/>
-</group>
-
-<group>
-    <field name="iot_device"/>
-    <field name="file"/>
-    <field name="file_name"/>
-    <field name="note"/>
-</group>
+                            <group>
+                                <field name="customer_id" options="{'no_create': True}"/>
+                                <field name="quotation_id" options="{'no_create': True}"/>
+                                <field name="contract_value" widget="monetary"/>
+                            </group>
+                            <group>
+                                <field name="date_start"/>
+                                <field name="date_end"/>
+                                <field name="status" widget="statusbar" statusbar_visible="nhap,cho_duyet,da_duyet,hieu_luc"/>
+                            </group>
+                        </group>
+                        <group>
+                            <group>
+                                <field name="iot_device" placeholder="Thiết bị IoT liên quan..."/>
+                                <field name="file" filename="file_name"/>
+                                <field name="file_name" invisible="1"/>
+                            </group>
+                            <group>
+                                <field name="note" placeholder="Ghi chú về hợp đồng..."/>
+                            </group>
+                        </group>
+                        <notebook>
+                            <page string="Thông tin bổ sung">
+                                <group>
+                                    <field name="document_count" string="Số lượng văn bản liên quan"/>
+                                </group>
+                            </page>
+                        </notebook>
                     </sheet>
                 </form>
             </field>
         </record>
+
         <record id="view_contract_tree" model="ir.ui.view">
             <field name="name">qlkh.contract.tree</field>
             <field name="model">qlkh.contract</field>
             <field name="arch" type="xml">
-                <tree
-    decoration-success="status=='hieu_luc'"
-    decoration-warning="status=='sap_het_han'"
-    decoration-danger="status=='het_han'">
+                <tree>
                     <field name="name"/>
                     <field name="customer_id"/>
                     <field name="date_start"/>
                     <field name="date_end"/>
-                    <field name="status"/>
-                    <field name="contract_value"/>
+                    <field name="contract_value" widget="monetary" sum="Tổng giá trị"/>
+                    <field name="status" decoration-success="status == 'hieu_luc'" decoration-warning="status == 'sap_het_han'" decoration-danger="status == 'het_han'" decoration-info="status == 'da_duyet'"/>
                 </tree>
             </field>
         </record>
+
+        <record id="view_contract_search" model="ir.ui.view">
+            <field name="name">qlkh.contract.search</field>
+            <field name="model">qlkh.contract</field>
+            <field name="arch" type="xml">
+                <search>
+                    <field name="name"/>
+                    <field name="customer_id"/>
+                    <separator/>
+                    <filter name="active_contracts" string="Đang hiệu lực" domain="[('status', '=', 'hieu_luc')]"/>
+                    <filter name="expiring_soon" string="Sắp hết hạn" domain="[('status', '=', 'sap_het_han')]"/>
+                    <group expand="0" string="Group By">
+                        <filter name="group_by_status" string="Trạng thái" context="{'group_by': 'status'}"/>
+                        <filter name="group_by_customer" string="Khách hàng" context="{'group_by': 'customer_id'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
         <record id="action_contract" model="ir.actions.act_window">
             <field name="name">Hợp đồng</field>
             <field name="res_model">qlkh.contract</field>
             <field name="view_mode">tree,form</field>
+            <field name="search_view_id" ref="view_contract_search"/>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Tạo hợp đồng mới cho khách hàng
+                </p>
+                <p>
+                    Quản lý hợp đồng, theo dõi hiệu lực và gia hạn.
+                </p>
+            </field>
         </record>
     </data>
 </odoo>

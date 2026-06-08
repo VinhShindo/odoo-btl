@@ -12,58 +12,112 @@
                             type="object"
                             string="Chấp nhận"
                             class="btn-primary"
-                            invisible="status == 'chap_nhan'"/>
+                            attrs="{'invisible': [('status', 'in', ['chap_nhan', 'tu_choi'])]}"/>
+                        <button
+                            name="action_send_email"
+                            type="object"
+                            string="Gửi email"
+                            class="btn-secondary"
+                            attrs="{'invisible': [('status', 'in', ['chap_nhan', 'tu_choi'])]}"/>
                     </header>
                     <sheet>
+                        <div class="oe_title">
+                            <h1>
+                                <field name="name" placeholder="Số báo giá..."/>
+                            </h1>
+                        </div>
                         <group>
-                            <field name="name"/>
-                            <field name="customer_id"/>
-                            <field name="date"/>
-                            <field name="status" widget="statusbar"/>
-                            <field name="file"/>
-                        <field name="file_name"/>
-                        <field name="quotation_value"/>
-                        <field name="note"/>
-                    </group>
-                    <notebook>
-                        <page string="Chi tiết sản phẩm">
-                            <field name="line_ids">
-                                <tree editable="bottom">
-                                    <field name="product_id"/>
-                                    <field name="description"/>
-                                    <field name="quantity"/>
-                                    <field name="unit_price"/>
-                                    <field name="vat_rate"/>
-                                    <field name="price_subtotal"/>
-                                    <field name="price_tax"/>
-                                    <field name="price_total"/>
-                                </tree>
-                            </field>
-                        </page>
-                    </notebook>
-                </sheet>
-            </form>
+                            <group>
+                                <field name="customer_id" options="{'no_create': True}"/>
+                                <field name="date"/>
+                                <field name="quotation_value" widget="monetary"/>
+                            </group>
+                            <group>
+                                <field name="status" widget="statusbar" statusbar_visible="nhap,da_gui,dam_phan,chap_nhan"/>
+                                <field name="file" filename="file_name"/>
+                                <field name="file_name" invisible="1"/>
+                            </group>
+                        </group>
+                        <notebook>
+                            <page string="Chi tiết sản phẩm">
+                                <field name="line_ids" context="{'default_quotation_id': active_id}">
+                                    <tree editable="bottom" decoration-info="quantity > 10">
+                                        <field name="product_name" placeholder="Tên sản phẩm..."/>
+                                        <field name="description" placeholder="Mô tả..."/>
+                                        <field name="quantity" sum="Tổng số lượng"/>
+                                        <field name="unit_price" sum="Tổng" widget="monetary"/>
+                                        <field name="vat_rate" widget="percentage"/>
+                                        <field name="price_subtotal" widget="monetary" sum="Tổng thành tiền"/>
+                                        <field name="price_tax" widget="monetary" sum="Tổng VAT"/>
+                                        <field name="price_total" widget="monetary" sum="Tổng cộng"/>
+                                    </tree>
+                                </field>
+                            </page>
+                            <page string="Hợp đồng liên quan">
+                                <field name="contract_ids">
+                                    <tree>
+                                        <field name="name"/>
+                                        <field name="date_start"/>
+                                        <field name="date_end"/>
+                                        <field name="contract_value" widget="monetary"/>
+                                        <field name="status"/>
+                                    </tree>
+                                </field>
+                            </page>
+                            <page string="Ghi chú">
+                                <field name="note" nolabel="1" placeholder="Ghi chú về báo giá..."/>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
             </field>
         </record>
+
         <record id="view_quotation_tree" model="ir.ui.view">
             <field name="name">qlkh.quotation.tree</field>
             <field name="model">qlkh.quotation</field>
             <field name="arch" type="xml">
-                <tree
-    decoration-success="status=='chap_nhan'"
-    decoration-danger="status=='tu_choi'"
-    decoration-warning="status=='dam_phan'">
+                <tree>
                     <field name="name"/>
                     <field name="customer_id"/>
                     <field name="date"/>
-                    <field name="status"/>
+                    <field name="quotation_value" widget="monetary" sum="Tổng giá trị"/>
+                    <field name="status" decoration-success="status == 'chap_nhan'" decoration-danger="status == 'tu_choi'" decoration-warning="status == 'dam_phan'" decoration-info="status == 'da_gui'"/>
                 </tree>
             </field>
         </record>
+
+        <record id="view_quotation_search" model="ir.ui.view">
+            <field name="name">qlkh.quotation.search</field>
+            <field name="model">qlkh.quotation</field>
+            <field name="arch" type="xml">
+                <search>
+                    <field name="name"/>
+                    <field name="customer_id"/>
+                    <separator/>
+                    <filter name="my_quotations" string="Báo giá của tôi" domain="[('customer_id.nhan_vien_phu_trach_id', '=', uid)]"/>
+                    <filter name="approved" string="Đã chấp nhận" domain="[('status', '=', 'chap_nhan')]"/>
+                    <group expand="0" string="Group By">
+                        <filter name="group_by_status" string="Trạng thái" context="{'group_by': 'status'}"/>
+                        <filter name="group_by_customer" string="Khách hàng" context="{'group_by': 'customer_id'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
         <record id="action_quotation" model="ir.actions.act_window">
             <field name="name">Báo giá</field>
             <field name="res_model">qlkh.quotation</field>
             <field name="view_mode">tree,form</field>
+            <field name="search_view_id" ref="view_quotation_search"/>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Tạo báo giá mới cho khách hàng
+                </p>
+                <p>
+                    Quản lý báo giá và theo dõi trạng thái phê duyệt.
+                </p>
+            </field>
         </record>
     </data>
 </odoo>

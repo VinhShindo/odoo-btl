@@ -91,7 +91,7 @@
                                 <tree string="Danh sách văn bản">
                                     <field name="code" string="Mã" width="100"/>
                                     <field name="name" string="Tiêu đề"/>
-                                    <field name="doc_type" string="Loại" width="80"/>
+                                    <field name="loai_van_ban_id" string="Loại" width="80"/>
                                     <field name="file_type" string="File" widget="badge" width="60"/>
                                     <field name="ocr_status" string="OCR" widget="badge" width="80"/>
                                     <field name="date" string="Ngày" width="100"/>
@@ -114,7 +114,7 @@
                                         <group col="2">
                                             <group>
                                                 <field name="code" readonly="1"/>
-                                                <field name="doc_type" readonly="1"/>
+                                                <field name="loai_van_ban_id" readonly="1"/>
                                                 <field name="date" readonly="1"/>
                                             </group>
                                             <group>

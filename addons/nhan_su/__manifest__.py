@@ -25,16 +25,20 @@
     # always loaded
     'data': [
         'security/ir.model.access.csv',
-        'views/chuc_vu.xml',
+        
+        # Load các file chứa ACTION trước
         'views/don_vi.xml',
-        'views/nhan_vien.xml',
+        'views/chuc_vu.xml',
+        'views/nhan_vien.xml',         # Chứa action_nhan_vien
         'views/lich_su_cong_tac.xml',
         'views/chung_chi_bang_cap.xml',
         'views/danh_sach_chung_chi_bang_cap.xml',
         'views/ho_so_dien_tu.xml',
+        'views/iot_project_assignment.xml',  # Chứa action_iot_project_assignment
+        'views/iot_device_log.xml',         # Chứa action_iot_device_log
+        
+        # Load menu SAU CÙNG (vì tham chiếu đến tất cả actions)
         'views/menu.xml',
-        'views/iot_project_assignment.xml',
-        'views/iot_device_log.xml',
     ],
     # only loaded in demonstration mode
     'demo': [

@@ -64,7 +64,7 @@
         />
 
         <menuitem name="Quản lý IoT" 
-            id="menu_quan_ly_iot" 
+            id="menu_quan_ly_iot"   
             parent="menu_root" 
             sequence="100"
         />

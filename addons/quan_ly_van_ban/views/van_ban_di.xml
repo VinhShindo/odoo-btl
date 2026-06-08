@@ -7,15 +7,65 @@
         <field name="arch" type="xml">
             <form>
                 <sheet>
-                    <div class="oe_title">
-                        <h1>Văn bản đi</h1>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_trinh_ky" type="object" 
+                                class="oe_stat_button" icon="fa-pencil-square-o"
+                                attrs="{'invisible': [('trang_thai', '!=', 'draft')]}"
+                                string="Trình ký"/>
+                        <button name="action_xac_nhan_gui" type="object" 
+                                class="oe_stat_button" icon="fa-envelope"
+                                attrs="{'invisible': [('trang_thai', '!=', 'da_ky')]}"
+                                string="Xác nhận gửi"/>
+                        <button name="action_hoan_thanh" type="object" 
+                                class="oe_stat_button" icon="fa-check-circle"
+                                attrs="{'invisible': [('trang_thai', '!=', 'da_gui')]}"
+                                string="Hoàn thành"/>
                     </div>
-                    <group col="4" string="Thông tin chung">
-                        <field name="ten_van_ban" required="1"/>
-                        <field name="so_van_ban_di" required="1"/>
-                        <field name="so_hieu_van_ban" required="1"/>
-                        <field name="noi_nhan"/>
-                    </group>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="ten_van_ban" placeholder="Tên văn bản"/>
+                        </h1>
+                    </div>
+                    <notebook>
+                        <page string="Thông tin chung">
+                            <group col="4" string="Thông tin cơ bản">
+                                <field name="so_van_ban_di" required="1" placeholder="Số văn bản đi"/>
+                                <field name="so_hieu_van_ban" required="1" placeholder="Số hiệu"/>
+                                <field name="loai_van_ban_id" required="1"/>
+                                <field name="trang_thai" widget="badge"
+                                       attrs="{'readonly': [('trang_thai', 'in', ['da_gui','hoan_thanh'])]}"/>
+                            </group>
+                            <group col="4" string="Thông tin thời gian">
+                                <field name="ngay_ban_hanh"/>
+                                <field name="ngay_di" required="1"/>
+                            </group>
+                            <group col="4" string="Thông tin liên quan">
+                                <field name="document_id" options="{'no_create': True}"/>
+                                <field name="customer_id" options="{'no_create': True}"/>
+                                <field name="noi_nhan" placeholder="Nơi nhận"/>
+                                <field name="nguoi_ky" placeholder="Người ký"/>
+                                <field name="so_ban"/>
+                            </group>
+                            <group col="4" string="Nhân sự xử lý">
+                                <field name="nhan_vien_tao_id" options="{'no_create': True}"/>
+                                <field name="nhan_vien_ky_id" options="{'no_create': True}"/>
+                            </group>
+                            <group col="2" string="Nội dung">
+                                <field name="trich_yeu" nolabel="1" placeholder="Trích yếu nội dung"/>
+                                <field name="ghi_chu" nolabel="1" placeholder="Ghi chú"/>
+                            </group>
+                            <group col="2" string="File đính kèm">
+                                <field name="file_dinh_kem" filename="ten_file"
+                                       attrs="{'invisible': [('file_dinh_kem', '=', False)]}"/>
+                            </group>
+                        </page>
+                        <page string="Lịch sử gửi" attrs="{'invisible': [('trang_thai', '=', 'draft')]}">
+                            <group string="Theo dõi quá trình">
+                                <field name="lich_su_gui" nolabel="1"
+                                       placeholder="Lịch sử gửi văn bản sẽ hiển thị tại đây"/>
+                            </group>
+                        </page>
+                    </notebook>
                 </sheet>
             </form>
         </field>
@@ -27,10 +77,15 @@
         <field name="model">van_ban_di</field>
         <field name="arch" type="xml">
             <tree>
-                <field name="ten_van_ban"/>
-                <field name="so_van_ban_di"/>
-                <field name="so_hieu_van_ban"/>
-                <field name="noi_nhan"/>
+                <field name="ten_van_ban" string="Tên văn bản"/>
+                <field name="so_van_ban_di" string="Số đi"/>
+                <field name="so_hieu_van_ban" string="Số hiệu"/>
+                <field name="loai_van_ban_id" string="Loại VB"/>
+                <field name="customer_id" string="Khách hàng"/>
+                <field name="noi_nhan" string="Nơi nhận"/>
+                <field name="ngay_di" string="Ngày đi" widget="date"/>
+                <field name="trang_thai" string="Trạng thái" widget="badge"/>
+                <field name="nhan_vien_tao_id" string="Người tạo"/>
             </tree>
         </field>
     </record>
@@ -45,6 +100,20 @@
                 <field name="so_van_ban_di"/>
                 <field name="so_hieu_van_ban"/>
                 <field name="noi_nhan"/>
+                <field name="trich_yeu"/>
+                <field name="customer_id"/>
+                <filter name="trang_thai_draft" string="Nháp" domain="[('trang_thai','=','draft')]"/>
+                <filter name="trang_thai_da_ky" string="Đã ký" domain="[('trang_thai','=','da_ky')]"/>
+                <filter name="trang_thai_da_gui" string="Đã gửi" domain="[('trang_thai','=','da_gui')]"/>
+                <filter name="trang_thai_hoan_thanh" string="Hoàn thành" domain="[('trang_thai','=','hoan_thanh')]"/>
+                <separator/>
+                <filter name="filter_ngay_di" string="Ngày đi" date="ngay_di"/>
+                <group expand="0" string="Nhóm theo">
+                    <filter name="group_by_trang_thai" string="Trạng thái" context="{'group_by':'trang_thai'}"/>
+                    <filter name="group_by_loai" string="Loại văn bản" context="{'group_by':'loai_van_ban_id'}"/>
+                    <filter name="group_by_khach_hang" string="Khách hàng" context="{'group_by':'customer_id'}"/>
+                    <filter name="group_by_nguoi_tao" string="Người tạo" context="{'group_by':'nhan_vien_tao_id'}"/>
+                </group>
             </search>
         </field>
     </record>

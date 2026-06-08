@@ -37,6 +37,6 @@
             <field name="res_model">iot_device_log</field>
             <field name="view_mode">tree,form</field>
         </record>
-        <menuitem id="menu_iot_device_log" name="Lịch sử sử dụng thiết bị IoT" parent="menu_root" action="action_iot_device_log" sequence="101"/>
+        <!-- <menuitem id="menu_iot_device_log" name="Lịch sử sử dụng thiết bị IoT" parent="menu_root" action="action_iot_device_log" sequence="101"/> -->
     </data>
 </odoo>

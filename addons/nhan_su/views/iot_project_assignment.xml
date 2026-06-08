@@ -38,6 +38,6 @@
             <field name="res_model">iot_project_assignment</field>
             <field name="view_mode">tree,form</field>
         </record>
-        <menuitem id="menu_iot_project_assignment" name="Phân công dự án IoT" parent="menu_root" action="action_iot_project_assignment" sequence="100"/>
+        <!-- <menuitem id="menu_iot_project_assignment" name="Phân công dự án IoT" parent="menu_root" action="action_iot_project_assignment" sequence="100"/> -->
     </data>
 </odoo>
