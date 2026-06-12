@@ -11,19 +11,30 @@
         'security/ir.model.access.csv',
         'data/sequence.xml',
         'views/van_ban_views.xml',
-        'views/van_ban_folder.xml',  # File này chứa model và views cho folder
+        'views/van_ban_folder.xml',
         'views/van_ban_folder_explorer.xml',
         'views/van_ban_routing.xml',
         'views/van_ban_den.xml',
         'views/van_ban_di.xml',
         'views/loai_van_ban.xml',
-        'views/menu.xml',  # Menu nên ở cuối cùng
+        'views/dashboard.xml',  # Dashboard action
+        'views/menu.xml',
+        'views/dashboard_templates.xml',
+    ],
+    'qweb': [
+        'static/src/xml/document_dashboard.xml',
     ],
     'assets': {
         'web.assets_backend': [
             'quan_ly_van_ban/static/src/css/folder.css',
+            'quan_ly_van_ban/static/src/css/document_dashboard.css',  # Thêm CSS mới
             'quan_ly_van_ban/static/src/js/folder_explorer.js',
+            'quan_ly_van_ban/static/src/js/document_dashboard.js',  # Thêm JS mới
+            'quan_ly_van_ban/static/src/xml/document_dashboard.xml',
             'quan_ly_van_ban/static/src/xml/folder_explorer.xml',
+        ],
+        'web.assets_qweb': [
+            'quan_ly_van_ban/static/src/xml/document_dashboard.xml',
         ],
     },
     'installable': True,

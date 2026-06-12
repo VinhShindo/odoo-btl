@@ -68,7 +68,7 @@ class Appointment(models.Model):
                     })
                     rec.follow_up_id = follow_up.id
 
-                if rec.customer_id and rec.customer_id.status in ('da_xac_thuc', 'khach_hang_tiem_nang'):
+                if rec.customer_id and rec.customer_id.status in ('da_xac_thuc', 'tiem_nang'):
                     if not rec.customer_id.quotation_ids:
                         quotation = self.env['qlkh.quotation'].create({
                             'name': f'BQ-{rec.customer_id.code or rec.customer_id.id}-{fields.Date.today().replace("-", "")}',
@@ -77,5 +77,5 @@ class Appointment(models.Model):
                             'status': 'nhap',
                         })
                         rec.related_quotation_id = quotation.id
-                        rec.customer_id.status = 'bao_gia'
+                        rec.customer_id.status = 'da_gui_bao_gia'
         return result

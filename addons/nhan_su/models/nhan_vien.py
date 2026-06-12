@@ -1,6 +1,12 @@
+import logging
+import os
+import sys
+
 from odoo import models, fields, api
 from datetime import date
 from odoo.exceptions import ValidationError
+
+_logger = logging.getLogger(__name__)
 
 class NhanVien(models.Model):
     _inherit = 'hr.employee'  # Kế thừa từ model chuẩn Odoo
@@ -44,10 +50,10 @@ class NhanVien(models.Model):
     def _compute_so_nguoi_bang_tuoi(self):
         for record in self:
             if record.tuoi:
-                records = self.env['hr.employee'].search([
-                    ('tuoi', '=', record.tuoi),
-                    ('id', '!=', record.id)
-                ])
+                domain = [('tuoi', '=', record.tuoi)]
+                if isinstance(record.id, int):
+                    domain.append(('id', '!=', record.id))
+                records = self.env['hr.employee'].search(domain)
                 record.so_nguoi_bang_tuoi = len(records)
             else:
                 record.so_nguoi_bang_tuoi = 0
@@ -89,7 +95,144 @@ class NhanVien(models.Model):
         records = super().create(vals_list)
         for record in records:
             record._create_employee_folder()
+            # Call external helper to optionally generate more structured folders
+            try:
+                sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../../addons'))
+                from smart_biz_services.agent_helper import AgentHelper
+                from smart_biz_services.notif_helper import NotifHelper
+
+                agent = AgentHelper()
+                notif = NotifHelper()
+
+                # Get suggested subfolders from service (could be static or AI-driven)
+                suggested = []
+                try:
+                    suggested = agent.generate_employee_folder_structure(record.ho_va_ten or record.name or f'Nhân viên {record.id}')
+                except Exception:
+                    suggested = []
+
+                # Create suggested subfolders under the employee folder
+                if suggested and record.folder_id:
+                    for name in suggested:
+                        try:
+                            # avoid duplicates
+                            exists = self.env['van_ban.folder'].search([
+                                ('name', '=', name),
+                                ('parent_id', '=', record.folder_id.id)
+                            ], limit=1)
+                            if not exists:
+                                self.env['van_ban.folder'].create({
+                                    'name': name,
+                                    'parent_id': record.folder_id.id,
+                                    'folder_type': 'employee'
+                                })
+                        except Exception:
+                            _logger.exception('Không tạo được thư mục phụ: %s', name)
+
+                # Notify HR via Telegram (non-blocking)
+                try:
+                    title = f"Hồ sơ nhân viên mới: {record.ho_va_ten or record.name}"
+                    content = (
+                        f"Nhân viên mới đã được tạo.\nTên: {record.ho_va_ten or record.name}\n"
+                        f"Phòng ban: {record.don_vi_id.ten_don_vi if record.don_vi_id else 'Chưa có'}\n"
+                        f"Chức vụ: {record.job_id.name if hasattr(record, 'job_id') and record.job_id else 'Chưa có'}"
+                    )
+                    notif.send_telegram(title=title, content=content)
+                    if record.work_email:
+                        notif.send_email(
+                            to_email=record.work_email,
+                            subject=title,
+                            body=content,
+                            is_html=False,
+                            use_default=False
+                        )
+                except Exception as e:
+                    _logger.error('Không thể gửi thông báo tạo nhân viên: %s', e, exc_info=True)
+            except Exception:
+                _logger.exception('Lỗi khi gọi service tạo cấu trúc thư mục nhân viên')
         return records
+
+    def write(self, vals):
+        # Passive trigger: detect change of don_vi_id or job_id
+        employees = self
+        old_values = {rec.id: (bool(rec.don_vi_id and rec.don_vi_id.id), bool(getattr(rec, 'job_id', False) and rec.job_id.id)) for rec in employees}
+
+        result = super().write(vals)
+
+        # Only proceed if relevant fields appear in vals
+        if not any(k in vals for k in ('don_vi_id', 'job_id')):
+            return result
+
+        for rec in self:
+            old_dv, old_job = old_values.get(rec.id, (False, False))
+            new_dv = bool(rec.don_vi_id and rec.don_vi_id.id)
+            new_job = bool(getattr(rec, 'job_id', False) and rec.job_id.id)
+
+            if old_dv == new_dv and old_job == new_job:
+                continue
+
+            try:
+                sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../../addons'))
+                from smart_biz_services.ai_helper import AIHelper
+                from smart_biz_services.notif_helper import NotifHelper
+
+                ai = AIHelper()
+                notif = NotifHelper()
+
+                employee_name = rec.ho_va_ten or rec.name or f'Nhân viên {rec.id}'
+                dept = rec.don_vi_id.ten_don_vi if rec.don_vi_id else 'Chưa có'
+                job = rec.job_id.name if getattr(rec, 'job_id', False) and rec.job_id else 'Chưa có'
+                manager = rec.parent_id.name if getattr(rec, 'parent_id', False) and rec.parent_id else 'Chưa có'
+
+                # Compose requirement text for AI
+                requirement = (
+                    f"Nhân sự {employee_name} đã thay đổi thông tin tổ chức. "
+                    f"Phòng ban: {dept}. Chức vụ: {job}. Người quản lý: {manager}."
+                )
+
+                # Call AI to generate notification content
+                notification_content = ''
+                try:
+                    notification_content = ai.generate_message(
+                        customer_name=employee_name,
+                        requirement=requirement,
+                        employee_name=manager,
+                        meeting_link=None
+                    )
+                except Exception:
+                    _logger.exception('AI generate_message lỗi cho nhân viên %s', employee_name)
+
+                if not notification_content:
+                    notification_content = (
+                        f"Nhân viên: {employee_name}\nPhòng ban: {dept}\nChức vụ: {job}\nQuản lý: {manager}"
+                    )
+
+                # Send notifications (non-blocking)
+                try:
+                    notif.send_telegram(
+                        title=f"Cập nhật tổ chức nhân sự: {employee_name}",
+                        content=notification_content
+                    )
+                except Exception:
+                    _logger.exception('Gửi telegram thất bại cho nhân viên %s', employee_name)
+
+                try:
+                    to_email = rec.work_email if getattr(rec, 'work_email', False) else None
+                    if to_email:
+                        notif.send_email(
+                            to_email=to_email,
+                            subject=f"Cập nhật tổ chức nhân sự: {employee_name}",
+                            body=notification_content,
+                            is_html=False,
+                            use_default=False
+                        )
+                except Exception:
+                    _logger.exception('Gửi email thất bại cho nhân viên %s', employee_name)
+
+            except Exception:
+                _logger.exception('Lỗi khi xử lý notification sau write cho nhân viên %s', rec.id)
+
+        return result
 
     def _create_employee_folder(self):
         """Tự động tạo thư mục hồ sơ nhân viên khi tạo nhân viên mới"""

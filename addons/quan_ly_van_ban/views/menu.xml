@@ -76,11 +76,18 @@
     </record>
 
     <!-- ==================== MENU ==================== -->
-    <!-- Menu Root -->
+    <!-- Menu Root - KHÔNG set action -->
     <menuitem id="menu_quan_ly_van_ban_root" 
               name="Quản Lý Văn Bản" 
               sequence="10"
               web_icon="quan_ly_van_ban,static/description/icon.png"/>
+    
+    <!-- Dashboard Menu - Gọi Client Action -->
+    <menuitem id="menu_document_dashboard" 
+              name="Dashboard" 
+              parent="menu_quan_ly_van_ban_root" 
+              sequence="0"
+              action="action_document_dashboard_client"/>
     
     <!-- Menu con cấp 1: Quản lý văn bản điện tử -->
     <menuitem id="menu_quan_ly_van_ban_dien_tu" 

@@ -34,6 +34,7 @@
                             </group>
                             <group>
                                 <field name="status" widget="statusbar" statusbar_visible="nhap,da_gui,dam_phan,chap_nhan"/>
+                                <field name="meet_url" readonly="1"/>
                                 <field name="file" filename="file_name"/>
                                 <field name="file_name" invisible="1"/>
                             </group>
@@ -47,7 +48,9 @@
                                         <field name="quantity" sum="Tổng số lượng"/>
                                         <field name="unit_price" sum="Tổng" widget="monetary"/>
                                         <field name="vat_rate" widget="percentage"/>
-                                        <field name="price_subtotal" widget="monetary" sum="Tổng thành tiền"/>
+                                           <field name="product_name" placeholder="Tên sản phẩm..."/>
+                                           <field name="product_id"/>
+                                           <field name="price_subtotal" widget="monetary" sum="Tổng thành tiền"/>
                                         <field name="price_tax" widget="monetary" sum="Tổng VAT"/>
                                         <field name="price_total" widget="monetary" sum="Tổng cộng"/>
                                     </tree>
@@ -83,6 +86,7 @@
                     <field name="date"/>
                     <field name="quotation_value" widget="monetary" sum="Tổng giá trị"/>
                     <field name="status" decoration-success="status == 'chap_nhan'" decoration-danger="status == 'tu_choi'" decoration-warning="status == 'dam_phan'" decoration-info="status == 'da_gui'"/>
+                    <field name="meet_url"/>
                 </tree>
             </field>
         </record>

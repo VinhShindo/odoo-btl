@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <menuitem id="menu_crm_root" name="Quản lý khách hàng" sequence="1"/>
+    <menuitem id="menu_crm_root" name="Quản lý khách hàng" sequence="1"/>
+        <menuitem id="menu_crm_dashboard" name="Dashboard CRM" parent="menu_crm_root" 
+                  action="action_crm_dashboard" sequence="0"/>
         <menuitem id="menu_crm_customer" name="Khách hàng" parent="menu_crm_root" action="action_customer" sequence="1"/>
         <menuitem id="menu_crm_quotation" name="Báo giá" parent="menu_crm_root" action="action_quotation" sequence="2"/>
         <menuitem id="menu_crm_contract" name="Hợp đồng" parent="menu_crm_root" action="action_contract" sequence="3"/>
@@ -12,5 +14,6 @@
     parent="menu_crm_root"
     action="action_appointment"
     sequence="5"/>
+        <menuitem id="menu_crm_products" name="Sản phẩm IoT" parent="menu_crm_root" action="action_contract_product" sequence="6"/>
     </data>
 </odoo>

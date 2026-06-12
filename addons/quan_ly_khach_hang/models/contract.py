@@ -1,6 +1,12 @@
+import logging
+import os
+import sys
+from datetime import date, timedelta, datetime
+
 from odoo import models, fields, api
 from odoo.exceptions import ValidationError
-from datetime import date, timedelta
+
+_logger = logging.getLogger(__name__)
 
 class Contract(models.Model):
     _name = 'qlkh.contract'
@@ -32,6 +38,9 @@ class Contract(models.Model):
         'qlkh.quotation',
         string='Báo giá nguồn'
     )
+    ai_summary = fields.Text('Tóm tắt AI')
+    ai_processed_at = fields.Datetime('Thời điểm xử lý AI')
+    ai_processed_by = fields.Many2one('res.users', string='AI xử lý bởi')
     
     document_count = fields.Integer(
         compute='_compute_document_count'
@@ -127,6 +136,8 @@ class Contract(models.Model):
 
     def action_approve(self):
         for rec in self:
+            if rec.status == 'da_duyet':
+                continue
 
             rec.status = 'da_duyet'
 
@@ -137,19 +148,13 @@ class Contract(models.Model):
             ], limit=1)
 
             if not document_exist:
-
                 document = self.env[
                     'van_ban.document'
                 ].create({
-
                     'name': f'Hồ sơ hợp đồng {rec.name}',
-
                     'doc_type': 'hop_dong',
-
                     'customer_id': rec.customer_id.id,
-
                     'related_contract_id': rec.id,
-
                     'status': 'draft',
                     'file': rec.file,
                     'file_name': rec.file_name,
@@ -160,6 +165,71 @@ class Contract(models.Model):
                         document.action_scan_ocr()
                     except Exception:
                         pass
+
+            try:
+                sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../../addons'))
+                from smart_biz_services.ai_helper import AIHelper
+                from smart_biz_services.notif_helper import NotifHelper
+
+                ai = AIHelper()
+                notif = NotifHelper()
+
+                summary = ''
+                if rec.file:
+                    try:
+                        summary = ai.summarize_document(rec.file_name or 'Nội dung hợp đồng', max_length=200)
+                    except Exception as e:
+                        _logger.warning('Summarize contract failed: %s', e)
+                        summary = f'Hợp đồng: {rec.name}'
+
+                rec.ai_summary = summary
+                rec.ai_processed_at = fields.Datetime.now()
+                rec.ai_processed_by = self.env.user
+
+                notification_content = (
+                    f"Hợp đồng phê duyệt: {rec.name}\n"
+                    f"Khách hàng: {rec.customer_id.name if rec.customer_id else 'N/A'}\n"
+                    f"Giá trị: {rec.contract_value:,.0f} VNĐ\n"
+                    f"Từ: {rec.date_start} đến {rec.date_end}\n"
+                    f"Tóm tắt: {summary}"
+                )
+
+                try:
+                    notif.send_telegram(
+                        title=f'Hợp đồng phê duyệt: {rec.name}',
+                        content=notification_content
+                    )
+                except Exception as e:
+                    _logger.error('Gửi Telegram cho hợp đồng thất bại: %s', e, exc_info=True)
+
+                if rec.customer_id and rec.customer_id.email:
+                    try:
+                        notif.send_email(
+                            to_email=rec.customer_id.email,
+                            subject=f'Hợp đồng {rec.name} đã được phê duyệt',
+                            body=notification_content,
+                            is_html=False,
+                            use_default=False
+                        )
+                    except Exception as e:
+                        _logger.error('Gửi email khách hàng thất bại: %s', e, exc_info=True)
+
+                activity_type = self.env.ref('mail.mail_activity_data_todo', raise_if_not_found=False)
+                if activity_type:
+                    self.env['mail.activity'].create({
+                        'activity_type_id': activity_type.id,
+                        'summary': f'Theo dõi triển khai hợp đồng {rec.name}',
+                        'note': notification_content,
+                        'res_model_id': self.env['ir.model']._get(self._name).id,
+                        'res_id': rec.id,
+                        'user_id': rec.customer_id.nhan_vien_phu_trach_id.user_id.id if (
+                            rec.customer_id and rec.customer_id.nhan_vien_phu_trach_id and rec.customer_id.nhan_vien_phu_trach_id.user_id
+                        ) else self.env.user.id,
+                        'date_deadline': date.today() + timedelta(days=7),
+                    })
+
+            except Exception as e:
+                _logger.error('Lỗi trong quá trình phê duyệt hợp đồng: %s', e, exc_info=True)
 
 
     def action_activate(self):

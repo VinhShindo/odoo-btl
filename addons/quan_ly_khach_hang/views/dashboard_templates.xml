@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_quan_ly_khach_hang_crm_dashboard_template" model="ir.ui.view">
+        <field name="name">quan_ly_khach_hang.crm_dashboard_template</field>
+        <field name="type">qweb</field>
+        <field name="key">quan_ly_khach_hang.crm_dashboard_template</field>
+        <field name="arch_db" type="xml">
+            <templates xml:space="preserve">
+                <t t-name="quan_ly_khach_hang.crm_dashboard_template">
+                    <div class="crm-dashboard-container">
+                        <div class="dashboard-header">
+                            <h1>Dashboard Quản lý Khách hàng</h1>
+                            <div class="header-stats">
+                                <div class="stat-card">
+                                    <span class="stat-label">Tổng KH</span>
+                                    <span class="stat-value" id="total_customers">-</span>
+                                </div>
+                                <div class="stat-card">
+                                    <span class="stat-label">Doanh thu dự kiến</span>
+                                    <span class="stat-value" id="total_revenue">-</span>
+                                </div>
+                                <div class="stat-card">
+                                    <span class="stat-label">Hợp đồng ký</span>
+                                    <span class="stat-value" id="total_contracts">-</span>
+                                </div>
+                                <div class="stat-card">
+                                    <span class="stat-label">Tỷ lệ chuyển đổi</span>
+                                    <span class="stat-value" id="conversion_rate">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-grid">
+                            <div class="chart-box">
+                                <h3>Khách hàng theo Trạng thái</h3>
+                                <canvas id="chart_customer_status"></canvas>
+                            </div>
+
+                            <div class="chart-box">
+                                <h3>Doanh thu theo Loại KH</h3>
+                                <canvas id="chart_revenue_by_type"></canvas>
+                            </div>
+
+                            <div class="chart-box">
+                                <h3>Báo giá theo Trạng thái</h3>
+                                <canvas id="chart_quotation_status"></canvas>
+                            </div>
+
+                            <div class="chart-box">
+                                <h3>Hợp đồng theo Trạng thái</h3>
+                                <canvas id="chart_contract_status"></canvas>
+                            </div>
+
+                            <div class="chart-box">
+                                <h3>Top 5 Khách hàng</h3>
+                                <canvas id="chart_top_customers"></canvas>
+                            </div>
+
+                            <div class="chart-box">
+                                <h3>Tỷ lệ Chuyển đổi Báo giá</h3>
+                                <div id="gauge_conversion" class="gauge-container"></div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </templates>
+        </field>
+    </record>
+</odoo>

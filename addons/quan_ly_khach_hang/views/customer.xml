@@ -12,10 +12,18 @@
                                 <field name="name"/>
                                 <field name="code"/>
                                 <field name="customer_type"/>
-                                <field name="status" widget="statusbar"/>
+                                <field name="status" widget="statusbar" statusbar_visible="tiem_nang,da_xac_thuc,dang_tu_van,da_gui_bao_gia,dam_phan,sap_ky_hd,thanh_cong,that_bai"/>
                             </group>
                             <group>
+                                <field name="area"/>
+                                <field name="industry"/>
+                                <field name="expected_revenue" widget="monetary"/>
+                                <field name="priority"/>
                                 <field name="nhan_vien_phu_trach_id"/>
+                            </group>
+                        </group>
+                        <group>
+                            <group>
                                 <field name="email"/>
                                 <field name="phone"/>
                                 <field name="iot_device"/>
@@ -34,8 +42,6 @@
                                 readonly="1"/>
                             <field name="revenue_total"
                                 readonly="1"/>
-                            <field name="customer_score"
-                                readonly="1"/>
                         </group>
                     </sheet>
                 </form>
@@ -52,8 +58,8 @@
                     <field name="code"/>
                     <field name="customer_type"/>
                     <field name="status"/>
+                    <field name="expected_revenue" widget="monetary"/>
                     <field name="nhan_vien_phu_trach_id"/>
-                    <field name="customer_score"/>
                     <field name="revenue_total"/>
                 </tree>
             </field>

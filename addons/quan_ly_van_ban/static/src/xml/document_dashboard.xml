@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates xml:space="preserve">
+    <t t-name="quan_ly_van_ban.document_dashboard_template">
+        <div class="document-dashboard-container">
+            <div class="dashboard-header">
+                <h1>Dashboard Quản lý Văn bản</h1>
+                <div class="header-stats">
+                    <div class="stat-card">
+                        <span class="stat-label">Tổng văn bản</span>
+                        <span class="stat-value" id="total_documents">-</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Đã phê duyệt</span>
+                        <span class="stat-value" id="approved_docs">-</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Tỷ lệ phê duyệt</span>
+                        <span class="stat-value" id="approval_rate">-</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Có OCR</span>
+                        <span class="stat-value" id="ai_docs">-</span>
+                    </div>
+                </div>
+            </div>
+            <div class="dashboard-grid">
+                <div class="chart-box">
+                    <h3>Văn bản theo Loại</h3>
+                    <canvas id="chart_doc_by_type"></canvas>
+                </div>
+                <div class="chart-box">
+                    <h3>Văn bản theo Trạng thái</h3>
+                    <canvas id="chart_doc_status"></canvas>
+                </div>
+                <div class="chart-box">
+                    <h3>Văn bản Đến / Đi</h3>
+                    <canvas id="chart_incoming_outgoing"></canvas>
+                </div>
+                <div class="chart-box">
+                    <h3>Tỷ lệ Phê duyệt</h3>
+                    <div id="gauge_approval" class="gauge-container"></div>
+                </div>
+                <div class="chart-box">
+                    <h3>Tài liệu có OCR AI</h3>
+                    <canvas id="chart_ai_summary"></canvas>
+                </div>
+                <div class="chart-box">
+                    <h3>Văn bản gần đây</h3>
+                    <div id="recent_documents" class="recent-list"></div>
+                </div>
+            </div>
+        </div>
+    </t>
+</templates>

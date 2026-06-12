@@ -4,6 +4,8 @@ from odoo.exceptions import UserError
 import base64
 import logging
 import io
+import os
+import sys
 from datetime import datetime
 from urllib.parse import quote
 
@@ -124,6 +126,9 @@ class VanBan(models.Model):
         'hr.employee',
         string='Người duyệt'
     )
+    ai_summary = fields.Text('Tóm tắt AI')
+    ai_processed_at = fields.Datetime('Thời điểm xử lý AI')
+    ai_processed_by = fields.Many2one('res.users', string='AI xử lý bởi')
     source_module = fields.Selection([
     ('crm', 'CRM'),
     ('hrm', 'HRM'),
@@ -174,6 +179,9 @@ class VanBan(models.Model):
         return super(VanBan, self).create(vals)
     
     def write(self, vals):
+        # Store old status before write
+        old_status = {rec.id: rec.status for rec in self}
+
         for rec in self:
 
             if rec.is_locked:
@@ -189,7 +197,73 @@ class VanBan(models.Model):
                         'Văn bản đã duyệt, không được chỉnh sửa.'
                     )
 
-        return super().write(vals)
+        result = super().write(vals)
+
+        # NEW: Handle document approval - summarize and notify
+        if 'status' in vals and vals['status'] == 'approved':
+            for rec in self:
+                if old_status.get(rec.id) != 'approved':
+                    try:
+                        rec._on_document_approved()
+                    except Exception as e:
+                        _logger.exception('Lỗi trong _on_document_approved cho document %s: %s', rec.id, e)
+
+        return result
+
+    def _on_document_approved(self):
+        """Khi văn bản được phê duyệt: tóm tắt + gửi thông báo"""
+        self.ensure_one()
+
+        try:
+            sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../../addons'))
+            from smart_biz_services.ai_helper import AIHelper
+            from smart_biz_services.notif_helper import NotifHelper
+
+            ai = AIHelper()
+            notif = NotifHelper()
+
+            summary = ''
+            if self.ocr_text:
+                try:
+                    summary = ai.summarize_document(self.ocr_text, max_length=200)
+                except Exception as e:
+                    _logger.warning('Summarize document failed: %s', e)
+                    summary = self.name
+
+            self.ai_summary = summary
+            self.ai_processed_at = fields.Datetime.now()
+            self.ai_processed_by = self.env.user
+
+            doc_type_label = dict(self._fields['doc_type'].selection).get(self.doc_type, self.doc_type)
+            notification_content = (
+                f"Văn bản phê duyệt: {self.name}\n"
+                f"Loại: {doc_type_label}\n"
+                f"Khách hàng: {self.customer_id.name if self.customer_id else 'N/A'}\n"
+                f"Tóm tắt: {summary or 'Xem chi tiết tại hệ thống'}"
+            )
+
+            try:
+                notif.send_telegram(
+                    title=f'Văn bản phê duyệt: {self.name}',
+                    content=notification_content
+                )
+            except Exception as e:
+                _logger.error('Gửi Telegram cho văn bản thất bại: %s', e, exc_info=True)
+
+            if self.customer_id and self.customer_id.email:
+                try:
+                    notif.send_email(
+                        to_email=self.customer_id.email,
+                        subject=f'Văn bản {self.name} đã được phê duyệt',
+                        body=notification_content,
+                        is_html=False,
+                        use_default=False
+                    )
+                except Exception as e:
+                    _logger.error('Gửi email khách hàng thất bại: %s', e, exc_info=True)
+
+        except Exception as e:
+            _logger.error('Lỗi trong _on_document_approved: %s', e, exc_info=True)
     
     @api.depends('file')
     def _compute_file_size(self):

@@ -12,7 +12,12 @@ class QuotationLine(models.Model):
         required=True,
         ondelete='cascade'
     )
-    # Đổi từ product_id thành product_name
+    product_id = fields.Many2one(
+        'qlkh.contract_product',
+        string='Sản phẩm',
+        help='Chọn sản phẩm/dịch vụ từ danh mục'
+    )
+    # Legacy / cached name for quick display or custom names
     product_name = fields.Char(
         string='Tên sản phẩm',
         help='Tên sản phẩm hoặc dịch vụ'
@@ -58,3 +63,14 @@ class QuotationLine(models.Model):
             rec.price_subtotal = subtotal
             rec.price_tax = tax
             rec.price_total = subtotal + tax
+
+    @api.onchange('product_id')
+    def _onchange_product_id(self):
+        for rec in self:
+            if rec.product_id:
+                rec.product_name = rec.product_id.name
+                # Prefer list_price if unit_price wasn't explicitly set
+                if not rec.unit_price or rec.unit_price == 0.0:
+                    rec.unit_price = rec.product_id.list_price or 0.0
+                if not rec.description:
+                    rec.description = rec.product_id.technical_specs or ''
