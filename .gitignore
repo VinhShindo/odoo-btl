@@ -57,4 +57,5 @@ insert_data.sql
 check_data_integrity.sql
 
 addons/smart_biz_services/config.json
+addons/smart_biz_services/token.json
 addons/smart_biz_services/create_token

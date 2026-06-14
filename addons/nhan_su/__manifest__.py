@@ -20,7 +20,6 @@
         'views/danh_sach_chung_chi_bang_cap.xml',
         'views/ho_so_dien_tu.xml',
         'views/iot_project_assignment.xml',
-        'views/iot_device_log.xml',
         'views/dashboard.xml',  # Dashboard action và template
         'views/menu.xml',       # Menu
         'views/dashboard_templates.xml',

@@ -38,9 +38,26 @@ class DocumentDashboardHelper(models.AbstractModel):
 
             # Approved documents
             approved_docs = self.env['van_ban.document'].search_count([
-                ('status', '=', 'da_duyet')
+                ('status', '=', 'approved')
+            ])
+            pending_docs = self.env['van_ban.document'].search_count([
+                ('status', '=', 'to_approve')
+            ])
+            draft_docs = self.env['van_ban.document'].search_count([
+                ('status', '=', 'draft')
+            ])
+            archived_docs = self.env['van_ban.document'].search_count([
+                ('status', '=', 'archived')
             ])
             approval_rate = (approved_docs / total_docs * 100) if total_docs > 0 else 0
+
+            # OCR progress
+            ocr_completed = self.env['van_ban.document'].search_count([
+                ('ocr_status', '=', 'completed')
+            ])
+            ocr_pending = self.env['van_ban.document'].search_count([
+                ('ocr_status', 'in', ['not_started', 'processing'])
+            ])
 
             # Documents with AI summary
             ai_docs = self.env['van_ban.document'].search_count([
@@ -51,11 +68,15 @@ class DocumentDashboardHelper(models.AbstractModel):
             # Recent documents
             recent_docs = self.env['van_ban.document'].search([], order='create_date desc', limit=5)
             recent_list = []
+            status_labels = dict(self.env['van_ban.document']._fields['status'].selection)
+            doc_type_labels = dict(self.env['van_ban.document']._fields['doc_type'].selection)
             for doc in recent_docs:
                 recent_list.append({
                     'name': doc.name or 'N/A',
-                    'status': dict(self.env['van_ban.document']._fields['status'].selection).get(doc.status, 'N/A'),
-                    'created': doc.create_date.strftime('%d/%m/%Y') if doc.create_date else 'N/A'
+                    'status': status_labels.get(doc.status, 'N/A'),
+                    'created': doc.create_date.strftime('%d/%m/%Y') if doc.create_date else 'N/A',
+                    'doc_type': doc_type_labels.get(doc.doc_type, 'N/A'),
+                    'responsible': doc.nhan_vien_id.name or 'N/A'
                 })
 
             return {
@@ -65,7 +86,12 @@ class DocumentDashboardHelper(models.AbstractModel):
                 'outgoing': outgoing,
                 'total_docs': total_docs,
                 'approved_docs': approved_docs,
+                'pending_docs': pending_docs,
+                'draft_docs': draft_docs,
+                'archived_docs': archived_docs,
                 'approval_rate': approval_rate,
+                'ocr_completed': ocr_completed,
+                'ocr_pending': ocr_pending,
                 'ai_docs': ai_docs,
                 'recent_docs': recent_list,
             }

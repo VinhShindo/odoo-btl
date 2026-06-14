@@ -91,10 +91,6 @@
             action="action_iot_project_assignment" 
             sequence="1"/>
             
-        <menuitem id="menu_iot_device_log" 
-            name="Lịch sử sử dụng thiết bị IoT" 
-            parent="menu_quan_ly_iot" 
-            action="action_iot_device_log" 
-            sequence="2"/>
+        <!-- Lịch sử sử dụng thiết bị IoT removed -->
     </data>
 </odoo>

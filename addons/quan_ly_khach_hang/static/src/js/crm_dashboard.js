@@ -38,7 +38,97 @@ odoo.define('quan_ly_khach_hang.crm_dashboard', function (require) {
                 minimumFractionDigits: 0
             }).format(value);
         },
-        
+
+        _getTooltipConfig: function() {
+            return {
+                enabled: true,
+                backgroundColor: 'rgba(15,23,42,0.95)',
+                titleColor: '#f8fafc',
+                bodyColor: '#e2e8f0',
+                borderColor: 'rgba(148,163,184,0.16)',
+                borderWidth: 1,
+                padding: 12,
+                displayColors: false,
+                intersect: false,
+                mode: 'nearest',
+                position: 'nearest'
+            };
+        },
+
+        _getAxisConfig: function() {
+            return {
+                grid: {
+                    color: 'rgba(148,163,184,0.12)',
+                    borderColor: 'rgba(148,163,184,0.16)',
+                    drawBorder: false
+                },
+                ticks: {
+                    color: '#cbd5e1',
+                    padding: 10
+                }
+            };
+        },
+
+        _getBarChartOptions: function() {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: this._getTooltipConfig(),
+                    legend: { display: false }
+                },
+                scales: {
+                    x: this._getAxisConfig(),
+                    y: Object.assign({}, this._getAxisConfig(), { beginAtZero: true })
+                },
+                animation: { duration: 600, easing: 'easeOutQuart' }
+            };
+        },
+
+        _getDonutChartOptions: function() {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '62%',
+                plugins: {
+                    tooltip: this._getTooltipConfig(),
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#cbd5e1',
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            padding: 18
+                        }
+                    }
+                },
+                hoverOffset: 12,
+                animation: { duration: 600, easing: 'easeOutQuart' }
+            };
+        },
+
+        _getCenterTextPlugin: function(value, label) {
+            var id = 'centerText_' + Math.random().toString(36).substr(2, 6);
+            return {
+                id: id,
+                afterDraw: function(chart) {
+                    var ctx = chart.ctx;
+                    var width = chart.width;
+                    var height = chart.height;
+                    ctx.save();
+                    ctx.font = '600 20px Inter, ui-sans-serif, system-ui';
+                    ctx.fillStyle = '#f8fafc';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(value, width / 2, height / 2 - 10);
+                    ctx.font = '400 12px Inter, ui-sans-serif, system-ui';
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.fillText(label || 'Tổng', width / 2, height / 2 + 14);
+                    ctx.restore();
+                }
+            };
+        },
+
         _loadChartsLibrary: function() {
             var self = this;
             if (typeof Chart === 'undefined') {
@@ -71,6 +161,43 @@ odoo.define('quan_ly_khach_hang.crm_dashboard', function (require) {
             });
         },
         
+        _ensureScrollable: function() {
+            var self = this;
+            setTimeout(function() {
+                var container = self.$('.crm-dashboard-container');
+                if (container.length) {
+                    // Force hardware acceleration và đảm bảo overflow
+                    container.css({
+                        'overflow-y': 'auto',
+                        'height': '100%',
+                        'display': 'block'
+                    });
+                    
+                    // Kiểm tra và sửa các container cha bị overflow hidden
+                    var parent = container.parent();
+                    var maxDepth = 10;
+                    var depth = 0;
+                    
+                    while (parent.length && !parent.is('body') && depth < maxDepth) {
+                        var overflow = parent.css('overflow');
+                        var overflowY = parent.css('overflow-y');
+                        
+                        if (overflow === 'hidden' || overflowY === 'hidden') {
+                            parent.css({
+                                'overflow': 'auto',
+                                'overflow-y': 'auto'
+                            });
+                        }
+                        
+                        parent = parent.parent();
+                        depth++;
+                    }
+                    
+                    console.log('CRM Scroll enabled - Container height:', container[0].scrollHeight, 'Client height:', container[0].clientHeight);
+                }
+            }, 100);
+        },
+        
         _renderDashboard: function(data) {
             this.$('#total_customers').text(data.total_customers || 0);
             this.$('#total_revenue').text(this.formatCurrency(data.total_expected_revenue || 0));
@@ -91,6 +218,9 @@ odoo.define('quan_ly_khach_hang.crm_dashboard', function (require) {
             }
             
             this._renderConversionGauge(data.conversion_rate || 0, data.accepted_quotations || 0, data.quotation_count || 0);
+            
+            // Đảm bảo scroll hoạt động
+            this._ensureScrollable();
         },
         
         _renderCustomerStatusChart: function(data) {
@@ -100,21 +230,26 @@ odoo.define('quan_ly_khach_hang.crm_dashboard', function (require) {
             
             var labels = Object.keys(data);
             var values = Object.values(data);
+            if (!labels.length) {
+                labels = ['Không có dữ liệu'];
+                values = [1];
+            }
+            var total = values.reduce(function(sum, val) { return sum + val; }, 0);
             
             this.charts.customerStatusChart = new Chart(ctx, {
-                type: 'pie',
+                type: 'doughnut',
                 data: {
                     labels: labels,
                     datasets: [{
                         data: values,
-                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
+                        backgroundColor: ['#60a5fa', '#38bdf8', '#22c55e', '#f97316', '#c084fc', '#facc15'],
+                        borderWidth: 0,
+                        borderRadius: 8,
+                        hoverOffset: 14
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: { legend: { position: 'bottom' } }
-                }
+                plugins: [this._getCenterTextPlugin(total, 'Tổng')],
+                options: this._getDonutChartOptions()
             });
         },
         
@@ -133,13 +268,14 @@ odoo.define('quan_ly_khach_hang.crm_dashboard', function (require) {
                     datasets: [{
                         label: 'Doanh thu (VNĐ)',
                         data: values,
-                        backgroundColor: '#667eea'
+                        backgroundColor: '#60a5fa',
+                        borderRadius: 8,
+                        borderSkipped: false,
+                        barPercentage: 0.7,
+                        categoryPercentage: 0.75
                     }]
                 },
-                options: {
-                    responsive: true,
-                    scales: { y: { beginAtZero: true } }
-                }
+                options: this._getBarChartOptions()
             });
         },
         
@@ -158,13 +294,14 @@ odoo.define('quan_ly_khach_hang.crm_dashboard', function (require) {
                     datasets: [{
                         label: 'Số báo giá',
                         data: values,
-                        backgroundColor: '#764ba2'
+                        backgroundColor: '#8b5cf6',
+                        borderRadius: 8,
+                        borderSkipped: false,
+                        barPercentage: 0.7,
+                        categoryPercentage: 0.75
                     }]
                 },
-                options: {
-                    responsive: true,
-                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-                }
+                options: this._getBarChartOptions()
             });
         },
         
@@ -175,6 +312,11 @@ odoo.define('quan_ly_khach_hang.crm_dashboard', function (require) {
             
             var labels = Object.keys(data);
             var values = Object.values(data);
+            if (!labels.length) {
+                labels = ['Không có dữ liệu'];
+                values = [1];
+            }
+            var total = values.reduce(function(sum, val) { return sum + val; }, 0);
             
             this.charts.contractStatusChart = new Chart(ctx, {
                 type: 'doughnut',
@@ -182,13 +324,14 @@ odoo.define('quan_ly_khach_hang.crm_dashboard', function (require) {
                     labels: labels,
                     datasets: [{
                         data: values,
-                        backgroundColor: ['#4BC0C0', '#FF9F40', '#FF6384', '#36A2EB', '#FFCE56', '#9966FF']
+                        backgroundColor: ['#4BC0C0', '#f97316', '#fb7185', '#38bdf8', '#facc15', '#a78bfa'],
+                        borderWidth: 0,
+                        borderRadius: 8,
+                        hoverOffset: 14
                     }]
                 },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { position: 'bottom' } }
-                }
+                plugins: [this._getCenterTextPlugin(total, 'Tổng')],
+                options: this._getDonutChartOptions()
             });
         },
         
@@ -201,18 +344,20 @@ odoo.define('quan_ly_khach_hang.crm_dashboard', function (require) {
                 this.charts.topCustomersChart = new Chart(ctx, {
                     type: 'bar',
                     data: {
-                        labels: customers.map(c => c.name),
+                        labels: customers.map(function(c) { return c.name; }),
                         datasets: [{
                             label: 'Doanh thu (VNĐ)',
-                            data: customers.map(c => c.revenue),
-                            backgroundColor: '#667eea'
+                            data: customers.map(function(c) { return c.revenue; }),
+                            backgroundColor: '#38bdf8',
+                            borderRadius: 8,
+                            borderSkipped: false,
+                            barPercentage: 0.6,
+                            categoryPercentage: 0.7
                         }]
                     },
-                    options: {
-                        indexAxis: 'y',
-                        responsive: true,
-                        scales: { x: { beginAtZero: true } }
-                    }
+                    options: Object.assign({}, this._getBarChartOptions(), {
+                        indexAxis: 'y'
+                    })
                 });
             }
         },

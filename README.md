@@ -20,7 +20,14 @@
 </div>
 
 ## 📖 1. Giới thiệu
-Platform ERP được áp dụng vào học phần Thực tập doanh nghiệp dựa trên mã nguồn mở Odoo. 
+Platform ERP được áp dụng vào học phần Thực tập doanh nghiệp dựa trên mã nguồn mở Odoo.
+
+Bộ code này tập trung triển khai ba module chính để phục vụ quản trị nội bộ và quan hệ khách hàng:
+- `nhan_su`: quản lý nhân sự (phòng ban, chức vụ, hồ sơ nhân viên, phân công dự án IoT).
+- `quan_ly_khach_hang`: quản lý khách hàng, báo giá, hợp đồng và lịch sử tương tác.
+- `quan_ly_van_ban`: quản lý văn bản/tài liệu, phân loại, thư mục, phiên bản và quy trình phê duyệt.
+
+File `insert_data.sql` kèm theo cung cấp tập dữ liệu mẫu để khởi tạo và kiểm thử các chức năng chính của ba module trên (nhân viên, khách hàng, báo giá/hợp đồng, văn bản). Các trường cần AI tổng hợp hoặc dữ liệu bổ sung được để trống hoặc có giá trị mẫu, bạn có thể điều chỉnh sau khi nạp dữ liệu vào cơ sở dữ liệu.
 
 ## 🔧 2. Các công nghệ được sử dụng
 <div align="center">
@@ -99,5 +106,27 @@ Người sử dụng truy cập theo đường dẫn _http://localhost:8069/_ đ
 © 2024 AIoTLab, Faculty of Information Technology, DaiNam University. All rights reserved.
 
 ---
+
+## 🔍 6. Phân tích nghiệp vụ (Tóm tắt)
+
+Mục tiêu hệ thống là cung cấp chức năng quản lý nội bộ và quan hệ khách hàng, bao gồm ba module chính sau:
+
+- `nhan_su` (Quản lý nhân sự)
+  - Mục tiêu: quản lý nhân viên, cấu trúc tổ chức, hồ sơ, phân công dự án IoT, và liên kết với hệ thống văn bản hồ sơ.
+  - Các thực thể chính: `don_vi`, `chuc_vu`, `hr.employee` (mở rộng bởi `NhanVien`), `lich_su_cong_tac`, `iot_project_assignment`.
+  - Luồng chính: tạo nhân viên → tự động tạo thư mục hồ sơ (`van_ban.folder`) → gán nhân viên cho khách hàng/khách hàng cho nhân viên → theo dõi lịch sử công tác và phân công dự án.
+
+- `quan_ly_khach_hang` (CRM nhẹ)
+  - Mục tiêu: quản lý khách hàng, báo giá, hợp đồng và lịch sử tương tác để hỗ trợ bán hàng và phân công nhân viên chăm sóc.
+  - Các thực thể chính: `qlkh.customer`, `qlkh.quotation`, `qlkh.quotation_line`, `qlkh.contract`, `qlkh.customer_interaction`.
+  - Luồng chính: tạo khách hàng → (tự động) tạo báo giá → tạo hợp đồng từ báo giá chấp nhận → ghi nhận tương tác và tính toán chỉ số (số báo giá, số hợp đồng, doanh thu).
+
+- `quan_ly_van_ban` (Quản lý văn bản)
+  - Mục tiêu: lưu trữ, phân loại, quản lý phiên bản và phê duyệt văn bản/tài liệu liên quan đến khách hàng và nhân sự.
+  - Các thực thể chính: `van_ban.document`, `van_ban.version`, `van_ban.approval`, `van_ban.folder`, `loai_van_ban`.
+  - Luồng chính: upload/khởi tạo document → gán folder/khách hàng/nhân viên → OCR/AI tóm tắt (tùy chọn) → duyệt/phê duyệt → tạo phiên bản.
+
+Ghi chú: `insert_data.sql` cung cấp dữ liệu mẫu cho các luồng trên (nhân viên, khách hàng, báo giá, hợp đồng, văn bản). Các trường cần tổng hợp bởi AI hoặc thủ công được để trống hoặc điền giá trị mẫu để thuận tiện cho việc kiểm thử.
+
 
     

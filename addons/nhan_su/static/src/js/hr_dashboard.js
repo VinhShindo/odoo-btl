@@ -5,7 +5,7 @@ odoo.define('nhan_su.hr_dashboard', function (require) {
     var core = require('web.core');
     
     var HrDashboard = AbstractAction.extend({
-        template: 'nhan_su.hr_dashboard_template',  // Module.template_id
+        template: 'nhan_su.hr_dashboard_template',
         
         events: {},
         
@@ -30,7 +30,97 @@ odoo.define('nhan_su.hr_dashboard', function (require) {
             };
             return text.replace(/[&<>"']/g, function(m) { return map[m]; });
         },
-        
+
+        _getTooltipConfig: function() {
+            return {
+                enabled: true,
+                backgroundColor: 'rgba(15,23,42,0.95)',
+                titleColor: '#f8fafc',
+                bodyColor: '#e2e8f0',
+                borderColor: 'rgba(148,163,184,0.16)',
+                borderWidth: 1,
+                padding: 12,
+                displayColors: false,
+                intersect: false,
+                mode: 'nearest',
+                position: 'nearest'
+            };
+        },
+
+        _getAxisConfig: function() {
+            return {
+                grid: {
+                    color: 'rgba(148,163,184,0.12)',
+                    borderColor: 'rgba(148,163,184,0.16)',
+                    drawBorder: false
+                },
+                ticks: {
+                    color: '#cbd5e1',
+                    padding: 10
+                }
+            };
+        },
+
+        _getBarChartOptions: function() {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: this._getTooltipConfig(),
+                    legend: { display: false }
+                },
+                scales: {
+                    x: this._getAxisConfig(),
+                    y: Object.assign({}, this._getAxisConfig(), { beginAtZero: true })
+                },
+                animation: { duration: 600, easing: 'easeOutQuart' }
+            };
+        },
+
+        _getDonutChartOptions: function() {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '62%',
+                plugins: {
+                    tooltip: this._getTooltipConfig(),
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#cbd5e1',
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            padding: 18
+                        }
+                    }
+                },
+                hoverOffset: 12,
+                animation: { duration: 600, easing: 'easeOutQuart' }
+            };
+        },
+
+        _getCenterTextPlugin: function(value, label) {
+            var id = 'centerText_' + Math.random().toString(36).substr(2, 6);
+            return {
+                id: id,
+                afterDraw: function(chart) {
+                    var ctx = chart.ctx;
+                    var width = chart.width;
+                    var height = chart.height;
+                    ctx.save();
+                    ctx.font = '600 20px Inter, ui-sans-serif, system-ui';
+                    ctx.fillStyle = '#f8fafc';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(value, width / 2, height / 2 - 10);
+                    ctx.font = '400 12px Inter, ui-sans-serif, system-ui';
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.fillText(label || 'Tổng', width / 2, height / 2 + 14);
+                    ctx.restore();
+                }
+            };
+        },
+
         _loadChartsLibrary: function() {
             var self = this;
             if (typeof Chart === 'undefined') {
@@ -83,6 +173,47 @@ odoo.define('nhan_su.hr_dashboard', function (require) {
             
             this._renderAgeGauge(data.avg_age || 0);
             this._renderRecentEmployees(data.recent_employees || []);
+            
+            // Đảm bảo scroll hoạt động
+            this._ensureScrollable();
+        },
+        
+        _ensureScrollable: function() {
+            var self = this;
+            setTimeout(function() {
+                var container = self.$('.hr-dashboard-container');
+                if (container.length) {
+                    // Force hardware acceleration và đảm bảo overflow
+                    container.css({
+                        'overflow-y': 'auto',
+                        'height': '100%',
+                        'display': 'block'
+                    });
+                    
+                    // Kiểm tra và sửa các container cha bị overflow hidden
+                    var parent = container.parent();
+                    var maxDepth = 10;
+                    var depth = 0;
+                    
+                    while (parent.length && !parent.is('body') && depth < maxDepth) {
+                        var overflow = parent.css('overflow');
+                        var overflowY = parent.css('overflow-y');
+                        
+                        if (overflow === 'hidden' || overflowY === 'hidden') {
+                            parent.css({
+                                'overflow': 'auto',
+                                'overflow-y': 'auto'
+                            });
+                        }
+                        
+                        parent = parent.parent();
+                        depth++;
+                    }
+                    
+                    // Log để debug
+                    console.log('Scroll enabled - Container height:', container[0].scrollHeight, 'Client height:', container[0].clientHeight);
+                }
+            }, 100);
         },
         
         _renderDepartmentChart: function(data) {
@@ -92,25 +223,26 @@ odoo.define('nhan_su.hr_dashboard', function (require) {
             
             var labels = Object.keys(data);
             var values = Object.values(data);
-            if (labels.length === 0) {
-                labels.push('Không có dữ liệu');
-                values.push(1);
+            if (!labels.length) {
+                labels = ['Không có dữ liệu'];
+                values = [1];
             }
+            var total = values.reduce(function(sum, val) { return sum + val; }, 0);
             
             this.charts.deptChart = new Chart(ctx, {
-                type: 'pie',
+                type: 'doughnut',
                 data: {
                     labels: labels,
                     datasets: [{
                         data: values,
-                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
+                        backgroundColor: ['#60a5fa', '#38bdf8', '#22c55e', '#f97316', '#c084fc', '#facc15'],
+                        borderWidth: 0,
+                        borderRadius: 8,
+                        hoverOffset: 14
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: { legend: { position: 'bottom' } }
-                }
+                plugins: [this._getCenterTextPlugin(total, 'Tổng')],
+                options: this._getDonutChartOptions()
             });
         },
         
@@ -121,9 +253,9 @@ odoo.define('nhan_su.hr_dashboard', function (require) {
             
             var labels = Object.keys(data);
             var values = Object.values(data);
-            if (labels.length === 0) {
-                labels.push('Không có dữ liệu');
-                values.push(0);
+            if (!labels.length) {
+                labels = ['Không có dữ liệu'];
+                values = [0];
             }
             
             this.charts.posChart = new Chart(ctx, {
@@ -133,13 +265,14 @@ odoo.define('nhan_su.hr_dashboard', function (require) {
                     datasets: [{
                         label: 'Số nhân viên',
                         data: values,
-                        backgroundColor: '#4facfe'
+                        backgroundColor: '#60a5fa',
+                        borderRadius: 8,
+                        borderSkipped: false,
+                        barPercentage: 0.7,
+                        categoryPercentage: 0.75
                     }]
                 },
-                options: {
-                    responsive: true,
-                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-                }
+                options: this._getBarChartOptions()
             });
         },
         
@@ -150,10 +283,11 @@ odoo.define('nhan_su.hr_dashboard', function (require) {
             
             var labels = Object.keys(data);
             var values = Object.values(data);
-            if (labels.length === 0) {
-                labels.push('Không có dữ liệu');
-                values.push(1);
+            if (!labels.length) {
+                labels = ['Không có dữ liệu'];
+                values = [1];
             }
+            var total = values.reduce(function(sum, val) { return sum + val; }, 0);
             
             this.charts.certChart = new Chart(ctx, {
                 type: 'doughnut',
@@ -161,13 +295,14 @@ odoo.define('nhan_su.hr_dashboard', function (require) {
                     labels: labels,
                     datasets: [{
                         data: values,
-                        backgroundColor: ['#4BC0C0', '#FF9F40', '#FF6384', '#36A2EB', '#FFCE56', '#9966FF']
+                        backgroundColor: ['#34d399', '#f97316', '#fb7185', '#38bdf8', '#facc15', '#a78bfa'],
+                        borderWidth: 0,
+                        borderRadius: 8,
+                        hoverOffset: 14
                     }]
                 },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { position: 'bottom' } }
-                }
+                plugins: [this._getCenterTextPlugin(total, 'Tổng')],
+                options: this._getDonutChartOptions()
             });
         },
         
@@ -205,14 +340,16 @@ odoo.define('nhan_su.hr_dashboard', function (require) {
                         datasets: [{
                             label: 'Số gán dự án',
                             data: values,
-                            backgroundColor: '#00f2fe'
+                            backgroundColor: '#38bdf8',
+                            borderRadius: 8,
+                            borderSkipped: false,
+                            barPercentage: 0.6,
+                            categoryPercentage: 0.7
                         }]
                     },
-                    options: {
-                        indexAxis: 'y',
-                        responsive: true,
-                        scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
-                    }
+                    options: Object.assign({}, this._getBarChartOptions(), {
+                        indexAxis: 'y'
+                    })
                 });
             }
         },

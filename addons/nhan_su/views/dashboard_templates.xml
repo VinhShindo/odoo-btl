@@ -7,58 +7,60 @@
         <field name="arch_db" type="xml">
             <templates xml:space="preserve">
                 <t t-name="nhan_su.hr_dashboard_template">
-                    <div class="hr-dashboard-container">
-                        <div class="dashboard-header">
-                            <h1>Dashboard Quản lý Nhân sự</h1>
-                            <div class="header-stats">
-                                <div class="stat-card">
-                                    <span class="stat-label">Tổng nhân viên</span>
-                                    <span class="stat-value" id="total_employees">-</span>
+                    <div class="o_view_manager_content" style="height: 100%; overflow: auto;">
+                        <div class="hr-dashboard-container">
+                            <div class="dashboard-header">
+                                <h1>Dashboard Quản lý Nhân sự</h1>
+                                <div class="header-stats">
+                                    <div class="stat-card">
+                                        <span class="stat-label">Tổng nhân viên</span>
+                                        <span class="stat-value" id="total_employees">-</span>
+                                    </div>
+                                    <div class="stat-card">
+                                        <span class="stat-label">Tuổi trung bình</span>
+                                        <span class="stat-value" id="avg_age">-</span>
+                                    </div>
+                                    <div class="stat-card">
+                                        <span class="stat-label">Tổng chứng chỉ</span>
+                                        <span class="stat-value" id="total_certs">-</span>
+                                    </div>
+                                    <div class="stat-card">
+                                        <span class="stat-label">Dự án đang gán</span>
+                                        <span class="stat-value" id="total_projects">-</span>
+                                    </div>
                                 </div>
-                                <div class="stat-card">
-                                    <span class="stat-label">Tuổi trung bình</span>
-                                    <span class="stat-value" id="avg_age">-</span>
+                            </div>
+
+                            <div class="dashboard-grid">
+                                <div class="chart-box">
+                                    <h3>Nhân viên theo Đơn vị</h3>
+                                    <canvas id="chart_emp_by_dept"></canvas>
                                 </div>
-                                <div class="stat-card">
-                                    <span class="stat-label">Tổng chứng chỉ</span>
-                                    <span class="stat-value" id="total_certs">-</span>
+
+                                <div class="chart-box">
+                                    <h3>Nhân viên theo Chức vụ</h3>
+                                    <canvas id="chart_emp_by_pos"></canvas>
                                 </div>
-                                <div class="stat-card">
-                                    <span class="stat-label">Dự án đang gán</span>
-                                    <span class="stat-value" id="total_projects">-</span>
+
+                                <div class="chart-box">
+                                    <h3>Phân bố Chứng chỉ</h3>
+                                    <canvas id="chart_certs"></canvas>
                                 </div>
-                            </div>
-                        </div>
 
-                        <div class="dashboard-grid">
-                            <div class="chart-box">
-                                <h3>Nhân viên theo Đơn vị</h3>
-                                <canvas id="chart_emp_by_dept"></canvas>
-                            </div>
+                                <div class="chart-box">
+                                    <h3>Tuổi Trung bình</h3>
+                                    <div id="gauge_age" class="gauge-container"></div>
+                                </div>
 
-                            <div class="chart-box">
-                                <h3>Nhân viên theo Chức vụ</h3>
-                                <canvas id="chart_emp_by_pos"></canvas>
-                            </div>
+                                <div class="chart-box">
+                                    <h3>Gán Dự án</h3>
+                                    <canvas id="chart_projects"></canvas>
+                                </div>
 
-                            <div class="chart-box">
-                                <h3>Phân bố Chứng chỉ</h3>
-                                <canvas id="chart_certs"></canvas>
-                            </div>
-
-                            <div class="chart-box">
-                                <h3>Tuổi Trung bình</h3>
-                                <div id="gauge_age" class="gauge-container"></div>
-                            </div>
-
-                            <div class="chart-box">
-                                <h3>Gán Dự án</h3>
-                                <canvas id="chart_projects"></canvas>
-                            </div>
-
-                            <div class="chart-box">
-                                <h3>Nhân viên gần đây</h3>
-                                <div id="recent_employees" class="recent-list"></div>
+                                <div class="chart-box">
+                                    <h3>Nhân viên gần đây</h3>
+                                    <div id="recent_employees" class="recent-list"></div>
+                                </div>
                             </div>
                         </div>
                     </div>

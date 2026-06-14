@@ -5,21 +5,39 @@
             <div class="dashboard-header">
                 <h1>Dashboard Quản lý Văn bản</h1>
                 <div class="header-stats">
-                    <div class="stat-card">
+                    <div class="stat-card stat-card--main">
                         <span class="stat-label">Tổng văn bản</span>
                         <span class="stat-value" id="total_documents">-</span>
                     </div>
-                    <div class="stat-card">
-                        <span class="stat-label">Đã phê duyệt</span>
+                    <div class="stat-card stat-card--main">
+                        <span class="stat-label">Đang chờ duyệt</span>
+                        <span class="stat-value" id="pending_docs">-</span>
+                    </div>
+                    <div class="stat-card stat-card--main">
+                        <span class="stat-label">Đã duyệt</span>
                         <span class="stat-value" id="approved_docs">-</span>
                     </div>
-                    <div class="stat-card">
-                        <span class="stat-label">Tỷ lệ phê duyệt</span>
-                        <span class="stat-value" id="approval_rate">-</span>
+                    <div class="stat-card stat-card--main">
+                        <span class="stat-label">Hoàn thành OCR</span>
+                        <span class="stat-value" id="ocr_completed">-</span>
                     </div>
-                    <div class="stat-card">
-                        <span class="stat-label">Có OCR</span>
-                        <span class="stat-value" id="ai_docs">-</span>
+                </div>
+                <div class="secondary-stats">
+                    <div class="stat-card stat-card--secondary">
+                        <span class="stat-label">Nháp</span>
+                        <span class="stat-value" id="draft_docs">-</span>
+                    </div>
+                    <div class="stat-card stat-card--secondary">
+                        <span class="stat-label">Đã lưu trữ</span>
+                        <span class="stat-value" id="archived_docs">-</span>
+                    </div>
+                    <div class="stat-card stat-card--secondary">
+                        <span class="stat-label">Văn bản đến</span>
+                        <span class="stat-value" id="incoming_docs">-</span>
+                    </div>
+                    <div class="stat-card stat-card--secondary">
+                        <span class="stat-label">Văn bản đi</span>
+                        <span class="stat-value" id="outgoing_docs">-</span>
                     </div>
                 </div>
             </div>

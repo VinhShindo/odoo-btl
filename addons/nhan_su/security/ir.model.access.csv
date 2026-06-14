@@ -7,4 +7,4 @@ access_danh_sach_chung_chi_bang_cap,danh_sach_chung_chi_bang_cap.danh_sach_chung
 access_ho_so_dien_tu,ho_so_dien_tu.ho_so_dien_tu,model_nhan_su_ho_so_dien_tu,base.group_user,1,1,1,1
 access_hr_employee,nhan_su.hr_employee,model_hr_employee,base.group_user,1,1,1,1
 access_iot_project_assignment,iot_project_assignment,model_iot_project_assignment,base.group_user,1,1,1,1
-access_iot_device_log,iot_device_log,model_iot_device_log,base.group_user,1,1,1,1
+

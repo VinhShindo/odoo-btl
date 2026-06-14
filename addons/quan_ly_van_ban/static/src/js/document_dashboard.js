@@ -16,7 +16,97 @@ odoo.define('quan_ly_van_ban.document_dashboard', function (require) {
             this._loadChartsLibrary();
             return this._super.apply(this, arguments);
         },
-        
+
+        _getTooltipConfig: function() {
+            return {
+                enabled: true,
+                backgroundColor: 'rgba(15,23,42,0.95)',
+                titleColor: '#f8fafc',
+                bodyColor: '#e2e8f0',
+                borderColor: 'rgba(148,163,184,0.16)',
+                borderWidth: 1,
+                padding: 12,
+                displayColors: false,
+                intersect: false,
+                mode: 'nearest',
+                position: 'nearest'
+            };
+        },
+
+        _getAxisConfig: function() {
+            return {
+                grid: {
+                    color: 'rgba(148,163,184,0.12)',
+                    borderColor: 'rgba(148,163,184,0.16)',
+                    drawBorder: false
+                },
+                ticks: {
+                    color: '#cbd5e1',
+                    padding: 10
+                }
+            };
+        },
+
+        _getBarChartOptions: function() {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: this._getTooltipConfig(),
+                    legend: { display: false }
+                },
+                scales: {
+                    x: this._getAxisConfig(),
+                    y: Object.assign({}, this._getAxisConfig(), { beginAtZero: true })
+                },
+                animation: { duration: 600, easing: 'easeOutQuart' }
+            };
+        },
+
+        _getDonutChartOptions: function() {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '62%',
+                plugins: {
+                    tooltip: this._getTooltipConfig(),
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#cbd5e1',
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            padding: 18
+                        }
+                    }
+                },
+                hoverOffset: 12,
+                animation: { duration: 600, easing: 'easeOutQuart' }
+            };
+        },
+
+        _getCenterTextPlugin: function(value, label) {
+            var id = 'centerText_' + Math.random().toString(36).substr(2, 6);
+            return {
+                id: id,
+                afterDraw: function(chart) {
+                    var ctx = chart.ctx;
+                    var width = chart.width;
+                    var height = chart.height;
+                    ctx.save();
+                    ctx.font = '600 20px Inter, ui-sans-serif, system-ui';
+                    ctx.fillStyle = '#f8fafc';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(value, width / 2, height / 2 - 10);
+                    ctx.font = '400 12px Inter, ui-sans-serif, system-ui';
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.fillText(label || 'Tổng', width / 2, height / 2 + 14);
+                    ctx.restore();
+                }
+            };
+        },
+
         _loadChartsLibrary: function() {
             var self = this;
             if (typeof Chart === 'undefined') {
@@ -44,8 +134,13 @@ odoo.define('quan_ly_van_ban.document_dashboard', function (require) {
         _renderDashboard: function(data) {
             this.$('#total_documents').text(data.total_docs || 0);
             this.$('#approved_docs').text(data.approved_docs || 0);
-            this.$('#approval_rate').text((data.approval_rate || 0).toFixed(1) + '%');
-            this.$('#ai_docs').text(data.ai_docs || 0);
+            this.$('#pending_docs').text(data.pending_docs || 0);
+            this.$('#draft_docs').text(data.draft_docs || 0);
+            this.$('#archived_docs').text(data.archived_docs || 0);
+            this.$('#ocr_completed').text(data.ocr_completed || 0);
+            this.$('#ocr_pending').text(data.ocr_pending || 0);
+            this.$('#incoming_docs').text(data.incoming || 0);
+            this.$('#outgoing_docs').text(data.outgoing || 0);
             
             if (typeof Chart !== 'undefined') {
                 this._renderTypeChart(data.doc_by_type || {});
@@ -62,17 +157,29 @@ odoo.define('quan_ly_van_ban.document_dashboard', function (require) {
             var ctx = document.getElementById('chart_doc_by_type');
             if (!ctx) return;
             if (this.charts.typeChart) this.charts.typeChart.destroy();
-            
+
+            var labels = Object.keys(data);
+            var values = Object.values(data);
+            if (!labels.length) {
+                labels = ['Không có dữ liệu'];
+                values = [1];
+            }
+            var total = values.reduce(function(sum, val) { return sum + val; }, 0);
+
             this.charts.typeChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: Object.keys(data),
+                    labels: labels,
                     datasets: [{
-                        data: Object.values(data),
-                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
+                        data: values,
+                        backgroundColor: ['#60a5fa', '#38bdf8', '#22c55e', '#f97316', '#c084fc', '#facc15'],
+                        borderWidth: 0,
+                        borderRadius: 8,
+                        hoverOffset: 14
                     }]
                 },
-                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+                plugins: [this._getCenterTextPlugin(total, 'Tổng')],
+                options: this._getDonutChartOptions()
             });
         },
         
@@ -80,7 +187,7 @@ odoo.define('quan_ly_van_ban.document_dashboard', function (require) {
             var ctx = document.getElementById('chart_doc_status');
             if (!ctx) return;
             if (this.charts.statusChart) this.charts.statusChart.destroy();
-            
+
             this.charts.statusChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -88,10 +195,14 @@ odoo.define('quan_ly_van_ban.document_dashboard', function (require) {
                     datasets: [{
                         label: 'Số văn bản',
                         data: Object.values(data),
-                        backgroundColor: '#f5576c'
+                        backgroundColor: '#fb7185',
+                        borderRadius: 8,
+                        borderSkipped: false,
+                        barPercentage: 0.7,
+                        categoryPercentage: 0.75
                     }]
                 },
-                options: { responsive: true, scales: { y: { beginAtZero: true } } }
+                options: this._getBarChartOptions()
             });
         },
         
@@ -99,14 +210,24 @@ odoo.define('quan_ly_van_ban.document_dashboard', function (require) {
             var ctx = document.getElementById('chart_incoming_outgoing');
             if (!ctx) return;
             if (this.charts.inOutChart) this.charts.inOutChart.destroy();
-            
+
+            var values = [incoming, outgoing];
+            var total = values.reduce(function(sum, val) { return sum + val; }, 0);
+
             this.charts.inOutChart = new Chart(ctx, {
-                type: 'pie',
+                type: 'doughnut',
                 data: {
                     labels: ['Văn bản Đến', 'Văn bản Đi'],
-                    datasets: [{ data: [incoming, outgoing], backgroundColor: ['#4BC0C0', '#FF9F40'] }]
+                    datasets: [{
+                        data: values,
+                        backgroundColor: ['#4BC0C0', '#f97316'],
+                        borderWidth: 0,
+                        borderRadius: 8,
+                        hoverOffset: 14
+                    }]
                 },
-                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+                plugins: [this._getCenterTextPlugin(total, 'Tổng')],
+                options: this._getDonutChartOptions()
             });
         },
         
@@ -114,7 +235,7 @@ odoo.define('quan_ly_van_ban.document_dashboard', function (require) {
             var ctx = document.getElementById('chart_ai_summary');
             if (!ctx) return;
             if (this.charts.aiChart) this.charts.aiChart.destroy();
-            
+
             this.charts.aiChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -122,10 +243,14 @@ odoo.define('quan_ly_van_ban.document_dashboard', function (require) {
                     datasets: [{
                         label: 'Số văn bản',
                         data: [aiDocs, totalDocs - aiDocs],
-                        backgroundColor: ['#667eea', '#e0e0e0']
+                        backgroundColor: ['#60a5fa', 'rgba(255,255,255,0.18)'],
+                        borderRadius: 8,
+                        borderSkipped: false,
+                        barPercentage: 0.7,
+                        categoryPercentage: 0.75
                     }]
                 },
-                options: { responsive: true, scales: { y: { beginAtZero: true } } }
+                options: this._getBarChartOptions()
             });
         },
         
@@ -158,12 +283,19 @@ odoo.define('quan_ly_van_ban.document_dashboard', function (require) {
                         <div class="recent-item">
                             <div>
                                 <div class="recent-item-name">${_.escape(doc.name)}</div>
-                                <div style="font-size: 12px; color: #999; margin-top: 4px;">${doc.created}</div>
+                                <div class="recent-item-meta">
+                                    <span>${_.escape(doc.doc_type)}</span>
+                                    <span>&middot;</span>
+                                    <span>${_.escape(doc.responsible)}</span>
+                                </div>
+                                <div class="recent-item-date">${doc.created}</div>
                             </div>
                             <span class="recent-item-status">${doc.status}</span>
                         </div>
                     `;
                 }).join(''));
+            } else {
+                container.html('<div class="loading-spinner"><i class="fa fa-folder-open"></i><div>Không có văn bản gần đây.</div></div>');
             }
         },
         
