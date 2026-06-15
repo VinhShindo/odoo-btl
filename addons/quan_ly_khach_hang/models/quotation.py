@@ -1,5 +1,6 @@
 import logging
 import sys
+import os
 from datetime import timedelta
 
 from odoo import models, fields, api
@@ -110,24 +111,21 @@ class Quotation(models.Model):
                     ) else self.env.user.id,
                     'date_deadline': fields.Date.today() + timedelta(days=2),
                 })
-
-            notification_content = (
-                f"Báo giá đang đàm phán: {self.name}\n"
-                f"Khách hàng: {self.customer_id.name}\n"
-                f"Link Google Meet: {meeting_link}"
+            notif.send_telegram_template(
+                'quotation_negotiation',
+                quotation_name=self.name,
+                customer_name=self.customer_id.name,
+                meeting_link=meeting_link
             )
-
-            notif.send_telegram(
-                title=title,
-                content=notification_content
-            )
-            notif.send_email(
-                to_email=self.customer_id.email,
-                subject=title,
-                body=notification_content,
-                is_html=False,
-                use_default=False
-            )
+            if self.customer_id and self.customer_id.email:
+                notif.send_email_template(
+                    'quotation_negotiation',
+                    to_email=self.customer_id.email,
+                    recipient_name=self.customer_id.name.split()[0] if self.customer_id.name else self.customer_id.name,
+                    quotation_name=self.name,
+                    customer_name=self.customer_id.name,
+                    meeting_link=meeting_link
+                )
         except Exception as e:
             _logger.exception('Lỗi tạo cuộc họp đàm phán: %s', e)
 

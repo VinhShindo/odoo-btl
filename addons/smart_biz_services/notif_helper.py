@@ -5,6 +5,7 @@ import os
 import sys
 import smtplib
 from email.message import EmailMessage
+from notification_templates import TelegramTemplates, EmailTemplates
 import ssl
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -120,3 +121,56 @@ class NotifHelper:
         except Exception as e:
             _logger.error(f"❌ Email failed: {e}")
             return False
+        
+    def send_telegram_template(self, template_type, **kwargs):
+        """
+        Gửi telegram sử dụng template chuẩn
+        
+        Args:
+            template_type: 'customer_created', 'customer_status_updated', 'contract_approved', ...
+            **kwargs: Các tham số cho template
+        """
+        template_method = getattr(TelegramTemplates, template_type, None)
+        if not template_method:
+            _logger.error(f"Unknown telegram template: {template_type}")
+            return False
+        
+        message = template_method(**kwargs)
+        return self.send_telegram(content=message, title="")  # title đã có trong message
+
+    def send_email_template(self, template_type, to_email, recipient_name=None, **kwargs):
+        """
+        Gửi email sử dụng template HTML chuẩn
+        
+        Args:
+            template_type: 'customer_created', 'customer_status_updated', 'contract_approved', ...
+            to_email: Email người nhận
+            recipient_name: Tên người nhận (để xưng hô)
+            **kwargs: Các tham số cho template
+        """
+        template_method = getattr(EmailTemplates, template_type, None)
+        if not template_method:
+            _logger.error(f"Unknown email template: {template_type}")
+            return False
+        
+        # Trong send_email_template, cập nhật subject_map:
+        subject_map = {
+            'customer_created': 'Khách hàng mới được tạo',
+            'customer_status_updated': 'Cập nhật trạng thái hồ sơ khách hàng',
+            'contract_approved': 'Hợp đồng đã được phê duyệt',
+            'document_approved': 'Văn bản đã được phê duyệt',
+            'employee_created': 'Chào mừng bạn gia nhập công ty',
+            'employee_updated': 'Cập nhật thông tin nhân viên',
+            'quotation_negotiation': 'Lời mời đàm phán báo giá',
+            'meeting_invitation': 'Lời mời họp trực tuyến',  # THÊM DÒNG NÀY
+        }
+        subject = subject_map.get(template_type, f'Thông báo từ {EmailTemplates.COMPANY_NAME}')
+        
+        html_body = template_method(recipient_name=recipient_name or to_email.split('@')[0], **kwargs)
+        return self.send_email(
+            to_email=to_email,
+            subject=subject,
+            body=html_body,
+            is_html=True,
+            use_default=False
+        )

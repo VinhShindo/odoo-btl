@@ -243,21 +243,26 @@ class VanBan(models.Model):
             )
 
             try:
-                notif.send_telegram(
-                    title=f'Văn bản phê duyệt: {self.name}',
-                    content=notification_content
+                notif.send_telegram_template(
+                    'document_approved',
+                    doc_name=self.name,
+                    doc_type=doc_type_label,
+                    customer_name=self.customer_id.name if self.customer_id else None,
+                    summary=summary or self.ai_summary or 'Văn bản đã được phê duyệt.'
                 )
             except Exception as e:
                 _logger.error('Gửi Telegram cho văn bản thất bại: %s', e, exc_info=True)
 
             if self.customer_id and self.customer_id.email:
                 try:
-                    notif.send_email(
+                    notif.send_email_template(
+                        'document_approved',  # Cần thêm template này trong EmailTemplates
                         to_email=self.customer_id.email,
-                        subject=f'Văn bản {self.name} đã được phê duyệt',
-                        body=notification_content,
-                        is_html=False,
-                        use_default=False
+                        recipient_name=self.customer_id.name.split()[0] if self.customer_id.name else self.customer_id.name,
+                        doc_name=self.name,
+                        doc_type=doc_type_label,
+                        customer_name=self.customer_id.name,
+                        summary=summary or self.ai_summary or 'Văn bản đã được phê duyệt.'
                     )
                 except Exception as e:
                     _logger.error('Gửi email khách hàng thất bại: %s', e, exc_info=True)

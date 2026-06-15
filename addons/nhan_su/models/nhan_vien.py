@@ -2,6 +2,8 @@ import logging
 import os
 import sys
 
+from numpy import record
+
 from odoo import models, fields, api
 from datetime import date
 from odoo.exceptions import ValidationError
@@ -137,14 +139,23 @@ class NhanVien(models.Model):
                         f"Phòng ban: {record.don_vi_id.ten_don_vi if record.don_vi_id else 'Chưa có'}\n"
                         f"Chức vụ: {record.job_id.name if hasattr(record, 'job_id') and record.job_id else 'Chưa có'}"
                     )
-                    notif.send_telegram(title=title, content=content)
+                    # Gửi Telegram
+                    notif.send_telegram_template(
+                        'employee_created',
+                        employee_name=record.ho_va_ten or record.name,
+                        department=record.don_vi_id.ten_don_vi if record.don_vi_id else 'Chưa phân công',
+                        job_title=record.job_id.name if hasattr(record, 'job_id') and record.job_id else 'Chưa phân công'
+                    )
+
+                    # Gửi Email cho nhân viên
                     if record.work_email:
-                        notif.send_email(
+                        notif.send_email_template(
+                            'employee_created',  # Cần thêm template này
                             to_email=record.work_email,
-                            subject=title,
-                            body=content,
-                            is_html=False,
-                            use_default=False
+                            recipient_name=record.name,
+                            employee_name=record.ho_va_ten or record.name,
+                            department=record.don_vi_id.ten_don_vi if record.don_vi_id else 'Chưa phân  công',
+                            job_title=record.job_id.name if hasattr(record, 'job_id') and record.job_id else 'Chưa phân công'
                         )
                 except Exception as e:
                     _logger.error('Không thể gửi thông báo tạo nhân viên: %s', e, exc_info=True)
@@ -173,10 +184,8 @@ class NhanVien(models.Model):
 
             try:
                 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../../addons'))
-                from smart_biz_services.ai_helper import AIHelper
                 from smart_biz_services.notif_helper import NotifHelper
 
-                ai = AIHelper()
                 notif = NotifHelper()
 
                 employee_name = rec.ho_va_ten or rec.name or f'Nhân viên {rec.id}'
@@ -184,47 +193,27 @@ class NhanVien(models.Model):
                 job = rec.job_id.name if getattr(rec, 'job_id', False) and rec.job_id else 'Chưa có'
                 manager = rec.parent_id.name if getattr(rec, 'parent_id', False) and rec.parent_id else 'Chưa có'
 
-                # Compose requirement text for AI
-                requirement = (
-                    f"Nhân sự {employee_name} đã thay đổi thông tin tổ chức. "
-                    f"Phòng ban: {dept}. Chức vụ: {job}. Người quản lý: {manager}."
-                )
-
-                # Call AI to generate notification content
-                notification_content = ''
                 try:
-                    notification_content = ai.generate_message(
-                        customer_name=employee_name,
-                        requirement=requirement,
-                        employee_name=manager,
-                        meeting_link=None
-                    )
-                except Exception:
-                    _logger.exception('AI generate_message lỗi cho nhân viên %s', employee_name)
-
-                if not notification_content:
-                    notification_content = (
-                        f"Nhân viên: {employee_name}\nPhòng ban: {dept}\nChức vụ: {job}\nQuản lý: {manager}"
-                    )
-
-                # Send notifications (non-blocking)
-                try:
-                    notif.send_telegram(
-                        title=f"Cập nhật tổ chức nhân sự: {employee_name}",
-                        content=notification_content
+                    notif.send_telegram_template(
+                        'employee_updated',
+                        employee_name=employee_name,
+                        department=dept,
+                        job_title=job,
+                        manager=manager
                     )
                 except Exception:
                     _logger.exception('Gửi telegram thất bại cho nhân viên %s', employee_name)
 
                 try:
-                    to_email = rec.work_email if getattr(rec, 'work_email', False) else None
-                    if to_email:
-                        notif.send_email(
-                            to_email=to_email,
-                            subject=f"Cập nhật tổ chức nhân sự: {employee_name}",
-                            body=notification_content,
-                            is_html=False,
-                            use_default=False
+                    if rec.work_email:
+                        notif.send_email_template(
+                            'employee_updated',
+                            to_email=rec.work_email,
+                            recipient_name=rec.name,
+                            employee_name=employee_name,
+                            department=dept,
+                            job_title=job,
+                            manager=manager
                         )
                 except Exception:
                     _logger.exception('Gửi email thất bại cho nhân viên %s', employee_name)

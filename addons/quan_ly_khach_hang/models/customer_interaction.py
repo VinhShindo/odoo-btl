@@ -1,3 +1,4 @@
+from datetime import timedelta
 import logging
 import os
 import sys
@@ -43,6 +44,12 @@ class CustomerInteraction(models.Model):
     @api.model
     def create(self, vals):
         interaction = super().create(vals)
+        
+        # ========== TRIGGER 11: Tạo meeting khi có khiếu nại ==========
+        if interaction.type == 'khieu_nai':
+            interaction._create_complaint_meeting()
+        # ========== KẾT THÚC TRIGGER 11 ==========
+        
         interaction._analyze_sentiment_if_required()
         return interaction
 
@@ -87,10 +94,16 @@ class CustomerInteraction(models.Model):
                     'sentiment_summary': summary,
                 })
 
+                # ========== TRIGGER 10: Tạo meeting khi cảm xúc tiêu cực ==========
+                if sentiment == 'negative' and confidence >= 0.8:
+                    record._create_negative_feedback_meeting(summary)
+                # ========== KẾT THÚC TRIGGER 10 ==========
+
                 if sentiment == 'negative' and confidence >= 0.6:
                     record._create_manager_activity(
                         summary=f'Tương tác tiêu cực cần quản lý xem xét: {summary or record.content[:120]}'
                     )
+                    
             except Exception as exc:
                 _logger.error(
                     'Lỗi phân tích cảm xúc cho interaction %s: %s',
@@ -98,6 +111,113 @@ class CustomerInteraction(models.Model):
                     exc,
                     exc_info=True
                 )
+
+    def _create_negative_feedback_meeting(self, summary):
+        """Tạo meeting khi phát hiện phản hồi tiêu cực"""
+        if not self.customer_id or not self.customer_id.email:
+            return
+        
+        try:
+            sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../../addons'))
+            from smart_biz_services.google_helper import GoogleHelper
+            from smart_biz_services.notif_helper import NotifHelper
+            
+            google = GoogleHelper()
+            notif = NotifHelper()
+            
+            meeting_title = f"Khắc phục sự cố - {self.customer_id.name}"
+            reason = f"Phát hiện phản hồi tiêu cực (độ tin cậy: {self.sentiment_confidence:.0%})\nNội dung: {summary[:200]}"
+            
+            meeting_link = google.create_meeting(
+                customer_email=self.customer_id.email,
+                customer_name=self.customer_id.name,
+                title=meeting_title,
+                duration_minutes=30
+            )
+            
+            if meeting_link:
+                notif.send_telegram_template(
+                    'meeting_created',
+                    customer_name=self.customer_id.name,
+                    meeting_link=meeting_link,
+                    reason=reason,
+                    meeting_title=meeting_title
+                )
+                
+                notif.send_email_template(
+                    'meeting_invitation',
+                    to_email=self.customer_id.email,
+                    recipient_name=self.customer_id.name.split()[0] if self.customer_id.name else self.customer_id.name,
+                    customer_name=self.customer_id.name,
+                    meeting_link=meeting_link,
+                    title=meeting_title,
+                    reason=reason
+                )
+                
+                _logger.info(f'Đã tạo meeting khắc phục cho khách hàng {self.customer_id.name}')
+                
+        except Exception as e:
+            _logger.error(f'Lỗi tạo meeting khắc phục: {e}')
+
+    def _create_complaint_meeting(self):
+        """Tạo meeting khi có khiếu nại"""
+        if not self.customer_id or not self.customer_id.email:
+            return
+        
+        try:
+            sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../../addons'))
+            from smart_biz_services.google_helper import GoogleHelper
+            from smart_biz_services.notif_helper import NotifHelper
+            
+            google = GoogleHelper()
+            notif = NotifHelper()
+            
+            meeting_title = f"Giải quyết khiếu nại - {self.customer_id.name}"
+            reason = f"Khiếu nại từ khách hàng: {self.content[:200]}"
+            
+            meeting_link = google.create_meeting(
+                customer_email=self.customer_id.email,
+                customer_name=self.customer_id.name,
+                title=meeting_title,
+                duration_minutes=45
+            )
+            
+            if meeting_link:
+                notif.send_telegram_template(
+                    'meeting_created',
+                    customer_name=self.customer_id.name,
+                    meeting_link=meeting_link,
+                    reason=reason,
+                    meeting_title=meeting_title
+                )
+                
+                notif.send_email_template(
+                    'meeting_invitation',
+                    to_email=self.customer_id.email,
+                    recipient_name=self.customer_id.name.split()[0] if self.customer_id.name else self.customer_id.name,
+                    customer_name=self.customer_id.name,
+                    meeting_link=meeting_link,
+                    title=meeting_title,
+                    reason=reason
+                )
+                
+                # Tạo activity cho nhân viên phụ trách
+                activity_type = self.env.ref('mail.mail_activity_data_todo', raise_if_not_found=False)
+                if activity_type and self.customer_id.nhan_vien_phu_trach_id:
+                    self.env['mail.activity'].create({
+                        'activity_type_id': activity_type.id,
+                        'summary': f'Xử lý khiếu nại: {meeting_title}',
+                        'note': f'Link họp: {meeting_link}\nNội dung khiếu nại: {self.content[:500]}',
+                        'res_model_id': self.env['ir.model']._get(self._name).id,
+                        'res_id': self.id,
+                        'user_id': self.customer_id.nhan_vien_phu_trach_id.user_id.id if self.customer_id.nhan_vien_phu_trach_id.user_id else self.env.user.id,
+                        'date_deadline': fields.Date.today() + timedelta(days=1),
+                    })
+                
+                _logger.info(f'Đã tạo meeting giải quyết khiếu nại cho khách hàng {self.customer_id.name}')
+                
+        except Exception as e:
+            _logger.error(f'Lỗi tạo meeting khiếu nại: {e}')
 
     def _create_manager_activity(self, summary=None):
         try:

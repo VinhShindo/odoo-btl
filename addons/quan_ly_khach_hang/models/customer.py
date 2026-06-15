@@ -152,65 +152,57 @@ class Customer(models.Model):
                 address=customer.address or 'Không xác định',
                 description=customer_description
             )
-
-            agent_helper = AgentHelper()  # Already imported above in try block
-            agents_meta = []
-            for emp in self.env['hr.employee'].search([]):
-                agents_meta.append({
-                    'user_id': emp.id,
-                    'name': emp.name,
-                    'job': emp.job_id.name if emp.job_id else 'Unknown',
-                    'department': emp.department_id.name if emp.department_id else 'Unknown',
-                    'region': emp.work_location_id.name if hasattr(emp, 'work_location_id') and emp.work_location_id else 'Unknown',
-                    'load': 0
-                })
-
-            route_result = agent_helper.route_lead({
-                'area': vals.get('area') or customer.area or 'Không xác định',
-                'industry': customer_industry,
-                'customer_type': customer_type_label,
-                'priority': vals.get('priority') or customer.priority or 'medium',
-                'ai_score': ai_result.get('ai_score', 0.0),
-                'ai_reason': ai_result.get('ai_reason', '')
-            }, agents_meta=agents_meta)
-
-            if route_result.get('confidence', 0.0) >= 0.75 and not customer.nhan_vien_phu_trach_id:
-                employee_id = route_result.get('employee_id')
-                if employee_id:
-                    employee = self.env['hr.employee'].browse(employee_id)
-                    if employee.exists():
-                        customer.write({'nhan_vien_phu_trach_id': employee.id})
-                        _logger.info('Tự động gán nhân viên theo route_lead: %s', employee.name)
-                    else:
-                        _logger.warning('route_lead trả employee_id không tồn tại: %s', employee_id)
-                else:
-                    _logger.warning('route_lead trả employee_id trống, không gán nhân viên tự động.')
+            
+            # 1. Tìm nhân viên phù hợp nhất dựa trên AI và thông tin khách hàng
+            best_employee, confidence, reason = customer._find_best_employee(
+                ai_score=ai_result.get('ai_score', 0.0),
+                ai_reason=ai_result.get('ai_reason', ''),
+                area=vals.get('area') or customer.area,
+                industry=customer_industry,
+                customer_type=customer_type_label,
+                priority=vals.get('priority') or customer.priority or 'medium'
+            )
+            
+            # 2. Gán nhân viên nếu tìm thấy (so sánh và gán lại nếu phù hợp hơn)
+            if best_employee:
+                customer._reassign_employee_if_better(best_employee, confidence, reason)
             else:
-                _logger.info('route_lead confidence thấp hoặc nhân viên đã được gán, không tự động gán. confidence=%s', route_result.get('confidence'))
+                _logger.warning('Không tìm thấy nhân viên phù hợp cho khách hàng %s', customer.name)
+            
+            # ========== TRIGGER 1: Meeting cho khách hàng tiềm năng cao ==========
+            ai_score = ai_result.get('ai_score', 0.0)
+            customer_priority = vals.get('priority') or customer.priority or 'medium'
+            
+            if ai_score >= 80 or customer_priority == 'high':
+                meeting_title = f"Giới thiệu giải pháp - {customer.name}"
+                reason = f"Khách hàng tiềm năng cao (Điểm AI: {ai_score}/100, Độ ưu tiên: {customer_priority})"
+                customer._create_meeting(meeting_title, reason, duration_minutes=30)
 
-            default_message = (
-                f"Khách hàng mới đã được tạo:\n"
-                f"Tên: {customer.name}\n"
-                f"Loại khách hàng: {customer_type_label}\n"
-                f"Ngành nghề: {customer_industry}\n"
-                f"Địa chỉ: {customer.address or 'Không xác định'}\n"
-                f"Mô tả: {customer_description}\n"
-                f"AI Score: {ai_result.get('ai_score', 0.0)}\n"
-                f"AI Reason: {ai_result.get('ai_reason', '')}\n"
+            # Gửi Telegram
+            notif.send_telegram_template(
+                'customer_created',
+                customer_name=customer.name,
+                customer_type=customer_type_label,
+                industry=customer_industry,
+                address=customer.address or 'Không xác định',
+                ai_score=ai_result.get('ai_score', 0.0),
+                ai_reason=ai_result.get('ai_reason', ''),
+                employee_name=customer.nhan_vien_phu_trach_id.name or 'Đang phân công'
             )
 
-            notif.send_telegram(
-                title='Khách hàng mới được tạo',
-                content=default_message
-            )
-
-            if customer.email:
-                notif.send_email(
-                    to_email=customer.email,
-                    subject='Khách hàng mới được tạo',
-                    body=default_message,
-                    is_html=False,
-                    use_default=False
+            # Gửi Email nội bộ cho phụ trách (không gửi cho khách hàng)
+            if customer.nhan_vien_phu_trach_id.work_email:
+                notif.send_email_template(
+                    'customer_created',
+                    to_email=customer.nhan_vien_phu_trach_id.work_email,
+                    recipient_name=customer.nhan_vien_phu_trach_id.name,
+                    customer_name=customer.name,
+                    customer_type=customer_type_label,
+                    industry=customer_industry,
+                    address=customer.address or 'Không xác định',
+                    ai_score=ai_result.get('ai_score', 0.0),
+                    ai_reason=ai_result.get('ai_reason', ''),
+                    employee_name=customer.nhan_vien_phu_trach_id.name or 'Đang phân công'
                 )
             else:
                 _logger.warning('Không có email khách hàng để gửi thông báo Gmail.')
@@ -265,6 +257,187 @@ class Customer(models.Model):
                 )
             )
 
+    def _find_best_employee(self, ai_score, ai_reason, area, industry, customer_type, priority):
+        """
+        Tìm nhân viên phù hợp nhất dựa trên:
+        - AI score của khách hàng
+        - Khu vực, ngành nghề, loại khách hàng
+        - Đánh giá tất cả nhân viên, so sánh và chọn người tốt nhất
+        """
+        try:
+            sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../../addons'))
+            from smart_biz_services.agent_helper import AgentHelper
+            
+            agent_helper = AgentHelper()
+            
+            # Lấy danh sách tất cả nhân viên để đánh giá
+            agents_meta = []
+            for emp in self.env['hr.employee'].search([]):
+                # Tính điểm KPI hiện tại của nhân viên (càng cao càng tốt, nhưng cần cân bằng tải)
+                kpi_score = emp.diem_kpi if hasattr(emp, 'diem_kpi') and emp.diem_kpi else 0
+                current_customer_count = self.env['qlkh.customer'].search_count([
+                    ('nhan_vien_phu_trach_id', '=', emp.id)
+                ])
+                
+                agents_meta.append({
+                    'user_id': emp.id,
+                    'name': emp.name,
+                    'job': emp.job_id.name if emp.job_id else 'Unknown',
+                    'department': emp.department_id.name if emp.department_id else 'Unknown',
+                    'region': emp.work_location_id.name if hasattr(emp, 'work_location_id') and emp.work_location_id else 'Unknown',
+                    'load': current_customer_count,  # Số lượng khách hàng đang phụ trách
+                    'kpi_score': kpi_score,  # Điểm KPI hiện tại
+                })
+            
+            # Gọi AI route_lead để đánh giá tất cả nhân viên
+            route_result = agent_helper.route_lead({
+                'area': area or 'Không xác định',
+                'industry': industry or 'Không xác định',
+                'customer_type': customer_type or 'Không xác định',
+                'priority': priority or 'medium',
+                'ai_score': ai_score,
+                'ai_reason': ai_reason
+            }, agents_meta=agents_meta)
+            
+            if route_result.get('confidence', 0.0) >= 0.65:  # Hạ ngưỡng xuống 0.65 để linh hoạt hơn
+                employee_id = route_result.get('employee_id')
+                if employee_id:
+                    employee = self.env['hr.employee'].browse(employee_id)
+                    if employee.exists():
+                        return employee, route_result.get('confidence', 0.0), route_result.get('reason', '')
+            
+            # Fallback: Chọn nhân viên có ít khách hàng nhất (load balancing)
+            employees_with_load = []
+            for emp in self.env['hr.employee'].search([]):
+                load = self.env['qlkh.customer'].search_count([('nhan_vien_phu_trach_id', '=', emp.id)])
+                employees_with_load.append((emp, load))
+            
+            if employees_with_load:
+                # Sắp xếp theo load tăng dần, chọn người có ít khách nhất
+                employees_with_load.sort(key=lambda x: x[1])
+                return employees_with_load[0][0], 0.0, 'Load balancing: nhân viên có ít khách hàng nhất'
+            
+            return None, 0.0, 'Không tìm thấy nhân viên phù hợp'
+            
+        except Exception as e:
+            _logger.error(f'Lỗi tìm nhân viên phù hợp: {e}')
+            return None, 0.0, str(e)
+
+
+    def _reassign_employee_if_better(self, new_employee, new_confidence, new_reason):
+        """So sánh và gán lại nhân viên nếu phù hợp hơn"""
+        if not new_employee:
+            return False
+        
+        current_employee = self.nhan_vien_phu_trach_id
+        
+        # Nếu chưa có nhân viên phụ trách -> gán luôn
+        if not current_employee:
+            self.write({'nhan_vien_phu_trach_id': new_employee.id})
+            _logger.info('Gán nhân viên phụ trách mới cho %s: %s (confidence: %s, reason: %s)', 
+                        self.name, new_employee.name, new_confidence, new_reason)
+            return True
+        
+        # Nếu đã có, so sánh: chỉ gán lại nếu confidence > 0.8 và khác nhân viên hiện tại
+        if new_confidence >= 0.8 and current_employee.id != new_employee.id:
+            # Ghi log để theo dõi
+            _logger.info('Có nhân viên phù hợp hơn cho %s: %s (confidence: %s) thay vì %s (cũ)',
+                        self.name, new_employee.name, new_confidence, current_employee.name)
+            
+            # Có thể gửi thông báo cho quản lý về việc thay đổi phụ trách
+            try:
+                from smart_biz_services.notif_helper import NotifHelper
+                notif = NotifHelper()
+                notif.send_telegram_template(
+                    'customer_reassigned',  # Cần thêm template này
+                    customer_name=self.name,
+                    old_employee=current_employee.name,
+                    new_employee=new_employee.name,
+                    reason=new_reason,
+                    confidence=new_confidence
+                )
+            except Exception as e:
+                _logger.error(f'Không thể gửi thông báo thay đổi phụ trách: {e}')
+            
+            self.write({'nhan_vien_phu_trach_id': new_employee.id})
+            return True
+        
+        return False
+    
+    def _create_meeting(self, meeting_title, reason, duration_minutes=30):
+        """
+        Tạo Google Meet và gửi thông báo cho khách hàng
+        
+        Args:
+            meeting_title: Tiêu đề cuộc họp
+            reason: Lý do tạo cuộc họp
+            duration_minutes: Thời lượng (phút)
+        """
+        if not self.email:
+            _logger.warning(f'Không thể tạo meeting: khách hàng {self.name} không có email')
+            return None
+        
+        try:
+            sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../../addons'))
+            from smart_biz_services.google_helper import GoogleHelper
+            from smart_biz_services.notif_helper import NotifHelper
+            
+            google = GoogleHelper()
+            notif = NotifHelper()
+            
+            # Tạo meeting
+            meeting_link = google.create_meeting(
+                customer_email=self.email,
+                customer_name=self.name,
+                title=meeting_title,
+                duration_minutes=duration_minutes
+            )
+            
+            if not meeting_link:
+                _logger.error(f'Không thể tạo meeting cho {self.name}')
+                return None
+            
+            # Gửi Telegram nội bộ
+            notif.send_telegram_template(
+                'meeting_created',
+                customer_name=self.name,
+                meeting_link=meeting_link,
+                reason=reason,
+                meeting_title=meeting_title
+            )
+            
+            # Gửi Email cho khách hàng
+            notif.send_email_template(
+                'meeting_invitation',
+                to_email=self.email,
+                recipient_name=self.name.split()[0] if self.name else self.name,
+                customer_name=self.name,
+                meeting_link=meeting_link,
+                title=meeting_title,
+                reason=reason
+            )
+            
+            _logger.info(f'Đã tạo meeting cho khách hàng {self.name}: {meeting_link}')
+            
+            # Tạo activity trong Odoo để theo dõi
+            activity_type = self.env.ref('mail.mail_activity_data_todo', raise_if_not_found=False)
+            if activity_type:
+                self.env['mail.activity'].create({
+                    'activity_type_id': activity_type.id,
+                    'summary': f'Cuộc họp: {meeting_title}',
+                    'note': f'Link Google Meet: {meeting_link}\nLý do: {reason}',
+                    'res_model_id': self.env['ir.model']._get(self._name).id,
+                    'res_id': self.id,
+                    'user_id': self.nhan_vien_phu_trach_id.user_id.id if self.nhan_vien_phu_trach_id and self.nhan_vien_phu_trach_id.user_id else self.env.user.id,
+                    'date_deadline': fields.Date.today(),
+                })
+            
+            return meeting_link
+            
+        except Exception as e:
+            _logger.error(f'Lỗi tạo meeting cho khách hàng {self.name}: {e}')
+            return None
+    
     def write(self, vals):
         customers = self
         tracked_fields = {'status', 'expected_revenue', 'customer_type', 'industry'}
@@ -321,37 +494,83 @@ class Customer(models.Model):
                 }
                 next_step = next_step_map.get(customer.status, 'Tiếp tục theo dõi tiến độ khách hàng.')
 
-                notification_content = ai_helper.generate_message(
+                # Lấy thông tin cũ và mới
+                old_status = old_values.get(customer.id, {}).get('status', '')
+                new_status = customer.status
+                status_label = dict(self._fields['status'].selection).get(new_status, new_status)
+                next_step = next_step_map.get(new_status, 'Chúng tôi sẽ cập nhật sau')
+
+                # Gửi Telegram
+                notif.send_telegram_template(
+                    'customer_status_updated',
                     customer_name=customer.name,
-                    requirement=(
-                        f"Trạng thái mới: {status_label}. "
-                        f"Bước tiếp theo: {next_step}"
-                    ),
-                    employee_name=employee_name,
-                    meeting_link=None
+                    old_status=old_status,
+                    new_status=status_label,
+                    employee_name=customer.nhan_vien_phu_trach_id.name or 'Đang xử lý',
+                    next_step=next_step
                 )
 
-                if not notification_content:
-                    notification_content = (
-                        f"Khách hàng: {customer.name}\n"
-                        f"Trạng thái mới: {status_label}\n"
-                        f"Người phụ trách: {employee_name}\n"
-                        f"Bước tiếp theo: {next_step}"
-                    )
-
-                notif.send_telegram(
-                    title=f'Cập nhật trạng thái khách hàng: {customer.name}',
-                    content=notification_content
-                )
-
-                if customer.email:
-                    notif.send_email(
+                # Gửi Email cho khách hàng (nếu có email và status không phải internal)
+                if customer.email and new_status not in ['tiem_nang']:  # Chỉ gửi khi thực sự cần
+                    notif.send_email_template(
+                        'customer_status_updated',
                         to_email=customer.email,
-                        subject='Cập nhật trạng thái khách hàng',
-                        body=notification_content,
-                        is_html=False,
-                        use_default=False
+                        recipient_name=customer.name.split()[0] if customer.name else customer.name,
+                        customer_name=customer.name,
+                        status_code=new_status,
+                        employee_name=customer.nhan_vien_phu_trach_id.name or 'Đang xử lý',
+                        next_step=next_step,
+                        note=customer.note if customer.note else None
                     )
+                # ========== THÊM ĐOẠN CODE NÀY VÀO CUỐI VÒNG LẶP for customer ==========
+                # BỔ SUNG: Gửi thông báo khi thay đổi customer_type, industry, expected_revenue
+                old_customer_type = old_values.get(customer.id, {}).get('customer_type', '')
+                old_industry = old_values.get(customer.id, {}).get('industry', '')
+                old_expected_revenue = old_values.get(customer.id, {}).get('expected_revenue', 0)
+                
+                if (old_customer_type != customer.customer_type or 
+                    old_industry != customer.industry or 
+                    old_expected_revenue != customer.expected_revenue):
+                    
+                    # Gửi Telegram thông báo nội bộ
+                    changes = []
+                    if old_customer_type != customer.customer_type:
+                        old_label = dict(self._fields['customer_type'].selection).get(old_customer_type, old_customer_type)
+                        new_label = dict(self._fields['customer_type'].selection).get(customer.customer_type, customer.customer_type)
+                        changes.append(f"Loại KH: {old_label} → {new_label}")
+                    if old_industry != customer.industry:
+                        changes.append(f"Ngành nghề: {old_industry or 'trống'} → {customer.industry or 'trống'}")
+                    if old_expected_revenue != customer.expected_revenue:
+                        changes.append(f"Doanh thu KV: {old_expected_revenue:,.0f} → {customer.expected_revenue:,.0f} VNĐ")
+                    
+                    if changes:
+                        change_text = "\n".join([f"• {c}" for c in changes])
+                        notif.send_telegram(
+                            chat_id=None,
+                            title=f"📝 CẬP NHẬT THÔNG TIN KHÁCH HÀNG",
+                            content=f"""👤 **Khách hàng**: {customer.name}
+    📊 **Thay đổi**:
+    {change_text}
+
+    👨‍💼 **Phụ trách**: {customer.nhan_vien_phu_trach_id.name or 'Chưa phân công'}
+
+    ⏰ {fields.Datetime.now().strftime('%H:%M %d/%m/%Y')}
+    ━━━━━━━━━━━━━━━━━━━━━━━
+    _SmartBiz - Cập nhật thông tin_"""
+                        )
+                        
+                        # Nếu có thay đổi loại KH hoặc ngành nghề, đánh giá lại nhân viên phụ trách
+                        if old_customer_type != customer.customer_type or old_industry != customer.industry:
+                            new_employee, new_confidence, new_reason = customer._find_best_employee(
+                                ai_score=customer.customer_score or 0,
+                                ai_reason=f"Thay đổi thông tin: loại KH={customer.customer_type}, ngành={customer.industry}",
+                                area=customer.area,
+                                industry=customer.industry,
+                                customer_type=dict(self._fields['customer_type'].selection).get(customer.customer_type, customer.customer_type),
+                                priority=customer.priority or 'medium'
+                            )
+                            if new_employee:
+                                customer._reassign_employee_if_better(new_employee, new_confidence, new_reason)
             except Exception as e:
                 _logger.error(
                     'Không thể gửi thông báo khi trạng thái khách hàng thay đổi cho %s: %s',

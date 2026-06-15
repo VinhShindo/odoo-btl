@@ -25,6 +25,11 @@
                             string="Kích hoạt"
                             class="btn-primary"
                             attrs="{'invisible': [('status', 'not in', ['da_duyet'])]}"/>
+                        <button name="action_check_expiring" 
+            type="object" 
+            string="Kiểm tra hợp đồng sắp hết hạn" 
+            class="btn-secondary"
+            attrs="{'invisible': [('status', 'not in', ['hieu_luc'])]}"/>
                     </header>   
                     <sheet>
                         <div class="oe_title">
@@ -53,6 +58,7 @@
                             </group>
                             <group>
                                 <field name="note" placeholder="Ghi chú về hợp đồng..."/>
+                                <field name="meeting_created" invisible="1"/>
                             </group>
                         </group>
                     </sheet>
