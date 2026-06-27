@@ -1,12 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
+        <!-- Form View -->
         <record id="view_quotation_form" model="ir.ui.view">
             <field name="name">qlkh.quotation.form</field>
             <field name="model">qlkh.quotation</field>
             <field name="arch" type="xml">
                 <form>
                     <header>
+                        <button
+                            name="action_send_email"
+                            type="object"
+                            string="Gửi"
+                            class="btn-primary"
+                            attrs="{'invisible': [('status', 'in', ['da_gui','chap_nhan','tu_choi'])]}"/>
+                        <button
+                            name="action_mark_viewed"
+                            type="object"
+                            string="Đã xem"
+                            class="btn-secondary"
+                            attrs="{'invisible': [('status', '!=', 'da_gui')]}"/>
+                        <button
+                            name="action_set_negotiation"
+                            type="object"
+                            string="Đàm phán"
+                            class="btn-warning"
+                            attrs="{'invisible': [('status', 'in', ['dam_phan','chap_nhan','tu_choi'])]}"/>
+                        <button
+                            name="action_reject"
+                            type="object"
+                            string="Từ chối"
+                            class="btn-danger"
+                            attrs="{'invisible': [('status', 'in', ['chap_nhan','tu_choi'])]}"/>
                         <button
                             name="action_accept_quotation"
                             type="object"
@@ -29,6 +54,7 @@
                         <group>
                             <group>
                                 <field name="customer_id" options="{'no_create': True}"/>
+                                <field name="source"/>
                                 <field name="date"/>
                                 <field name="quotation_value" widget="monetary"/>
                             </group>
@@ -46,11 +72,10 @@
                                         <field name="product_name" placeholder="Tên sản phẩm..."/>
                                         <field name="description" placeholder="Mô tả..."/>
                                         <field name="quantity" sum="Tổng số lượng"/>
-                                        <field name="unit_price" sum="Tổng" widget="monetary"/>
+                                        <field name="unit_price" widget="monetary"/>
                                         <field name="vat_rate" widget="percentage"/>
-                                           <field name="product_name" placeholder="Tên sản phẩm..."/>
-                                           <field name="product_id"/>
-                                           <field name="price_subtotal" widget="monetary" sum="Tổng thành tiền"/>
+                                        <field name="product_id"/>
+                                        <field name="price_subtotal" widget="monetary" sum="Tổng thành tiền"/>
                                         <field name="price_tax" widget="monetary" sum="Tổng VAT"/>
                                         <field name="price_total" widget="monetary" sum="Tổng cộng"/>
                                     </tree>
@@ -76,6 +101,7 @@
             </field>
         </record>
 
+        <!-- Tree View -->
         <record id="view_quotation_tree" model="ir.ui.view">
             <field name="name">qlkh.quotation.tree</field>
             <field name="model">qlkh.quotation</field>
@@ -91,6 +117,7 @@
             </field>
         </record>
 
+        <!-- Search View -->
         <record id="view_quotation_search" model="ir.ui.view">
             <field name="name">qlkh.quotation.search</field>
             <field name="model">qlkh.quotation</field>
@@ -109,6 +136,7 @@
             </field>
         </record>
 
+        <!-- Action -->
         <record id="action_quotation" model="ir.actions.act_window">
             <field name="name">Báo giá</field>
             <field name="res_model">qlkh.quotation</field>

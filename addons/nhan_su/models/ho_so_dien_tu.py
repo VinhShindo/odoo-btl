@@ -7,7 +7,7 @@ class HoSoDienTu(models.Model):
     _rec_name = 'ten_file'
 
     ho_so = fields.Char('Hồ sơ', required=True)
-    nhan_vien_id = fields.Many2one('hr.employee', string='Nhân viên', required=True)
+    nhan_vien_id = fields.Many2one('hr.employee', string='Nhân viên', required=False, ondelete='set null')
     loai_ho_so = fields.Selection([
         ('cv', 'CV'),
         ('cccd', 'CCCD'),

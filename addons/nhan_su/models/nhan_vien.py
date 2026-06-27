@@ -37,6 +37,28 @@ class NhanVien(models.Model):
         'nhan_vien_id'
     )
     folder_id = fields.Many2one('van_ban.folder', string='Thư mục hồ sơ nhân viên', readonly=True)
+    ho_so_dien_tu_ids = fields.One2many(
+        'nhan_su.ho_so_dien_tu',
+        'nhan_vien_id',
+        string='Hồ sơ điện tử'
+    )
+
+    @api.model
+    def _get_employee_domain_exclude_admin(self):
+        """Get domain to exclude admin user from employee records"""
+        admin_user = self.env.ref('base.user_admin', raise_if_not_found=False)
+        if admin_user:
+            return [('user_id', '!=', admin_user.id)]
+        return []
+
+    @api.model
+    def search(self, args, offset=0, limit=None, order=None, count=False):
+        """Override search to automatically exclude admin user"""
+        # Thêm domain để bỏ qua admin user
+        admin_domain = self._get_employee_domain_exclude_admin()
+        if admin_domain:
+            args = args + admin_domain
+        return super().search(args, offset=offset, limit=limit, order=order, count=count)
 
     @api.depends("ho_ten_dem", "ten")
     def _compute_ho_va_ten(self):
@@ -52,7 +74,10 @@ class NhanVien(models.Model):
     def _compute_so_nguoi_bang_tuoi(self):
         for record in self:
             if record.tuoi:
-                domain = [('tuoi', '=', record.tuoi)]
+                domain = [
+                    ('tuoi', '=', record.tuoi),
+                    ('user_id', '!=', self.env.ref('base.user_admin', raise_if_not_found=False).id if self.env.ref('base.user_admin', raise_if_not_found=False) else 0)
+                ]
                 if isinstance(record.id, int):
                     domain.append(('id', '!=', record.id))
                 records = self.env['hr.employee'].search(domain)
@@ -222,6 +247,34 @@ class NhanVien(models.Model):
                 _logger.exception('Lỗi khi xử lý notification sau write cho nhân viên %s', rec.id)
 
         return result
+
+    def _clear_custom_employee_references(self):
+        """Clear related custom model references when employee is archived or deleted."""
+        if not self:
+            return
+        employee_ids = self.ids
+        self.env['qlkh.customer'].search([('nhan_vien_phu_trach_id', 'in', employee_ids)]).write({'nhan_vien_phu_trach_id': False})
+        self.env['qlkh.customer_interaction'].search([('nhan_vien_id', 'in', employee_ids)]).write({'nhan_vien_id': False})
+        self.env['qlkh.appointment'].search([('nhan_vien_id', 'in', employee_ids)]).write({'nhan_vien_id': False})
+        self.env['van_ban.document'].search([('nhan_vien_id', 'in', employee_ids)]).write({'nhan_vien_id': False})
+        self.env['van_ban_di'].search([('nhan_vien_tao_id', 'in', employee_ids)]).write({'nhan_vien_tao_id': False})
+        self.env['van_ban_di'].search([('nhan_vien_ky_id', 'in', employee_ids)]).write({'nhan_vien_ky_id': False})
+        self.env['van_ban_den'].search([('nhan_vien_nhan_id', 'in', employee_ids)]).write({'nhan_vien_nhan_id': False})
+        self.env['van_ban_den'].search([('nhan_vien_chuyen_id', 'in', employee_ids)]).write({'nhan_vien_chuyen_id': False})
+        self.env['van_ban.routing'].search([('assigned_to', 'in', employee_ids)]).write({'assigned_to': False})
+        self.env['nhan_su.ho_so_dien_tu'].search([('nhan_vien_id', 'in', employee_ids)]).write({'nhan_vien_id': False})
+
+    def toggle_active(self):
+        employees_to_archive = self.filtered(lambda e: e.active)
+        result = super().toggle_active()
+        archived_employees = employees_to_archive.filtered(lambda e: not e.active)
+        if archived_employees:
+            archived_employees._clear_custom_employee_references()
+        return result
+
+    def unlink(self):
+        self._clear_custom_employee_references()
+        return super().unlink()
 
     def _create_employee_folder(self):
         """Tự động tạo thư mục hồ sơ nhân viên khi tạo nhân viên mới"""

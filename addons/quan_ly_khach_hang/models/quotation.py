@@ -14,6 +14,10 @@ class Quotation(models.Model):
 
     name = fields.Char('Số báo giá', required=True)
     customer_id = fields.Many2one('qlkh.customer', string='Khách hàng', required=True)
+    source = fields.Selection([
+        ('system', 'Hệ thống'),
+        ('customer', 'Khách hàng')
+    ], string='Nguồn báo giá', default='system')
     date = fields.Date('Ngày báo giá', required=True)
     status = fields.Selection([
         ('nhap', 'Nháp'),
@@ -54,6 +58,16 @@ class Quotation(models.Model):
             rec.quotation_value = sum(
                 rec.line_ids.mapped('price_total')
             ) if rec.line_ids else 0.0
+
+    @api.model
+    def create(self, vals):
+        quotation = super().create(vals)
+        # ensure there is a linked document and outgoing record
+        try:
+            quotation._ensure_linked_document()
+        except Exception as e:
+            _logger.exception('Không thể tạo document cho báo giá: %s', e)
+        return quotation
 
     def write(self, vals):
         old_status = {rec.id: rec.status for rec in self}
@@ -131,7 +145,123 @@ class Quotation(models.Model):
 
     def action_send_email(self):
         # Logic gửi email báo giá cho khách hàng
-        pass
+        for rec in self:
+            rec.status = 'da_gui'
+            try:
+                rec._ensure_linked_document()
+                # set document status to 'to_approve' when sent
+                if rec._get_linked_document():
+                    doc = rec._get_linked_document()
+                    doc.write({'status': 'to_approve'})
+            except Exception:
+                _logger.exception('Lỗi khi cập nhật document khi gửi báo giá %s', rec.id)
+        return True
+
+    def action_mark_viewed(self):
+        for rec in self:
+            if rec.status == 'da_gui':
+                rec.status = 'da_xem'
+        return True
+
+    def action_set_negotiation(self):
+        for rec in self:
+            rec.status = 'dam_phan'
+        return True
+
+    def action_reject(self):
+        for rec in self:
+            rec.status = 'tu_choi'
+        return True
+
+    def _get_linked_document(self):
+        self.ensure_one()
+        return self.env['van_ban.document'].search([('related_quotation_id', '=', self.id)], limit=1)
+
+    def _ensure_linked_document(self):
+        """Create or update a van_ban.document and van_ban_di record linked to this quotation."""
+        self.ensure_one()
+        doc = self._get_linked_document()
+        if not doc:
+            # create document
+            doc_vals = {
+                'name': f'Báo giá {self.name}',
+                'doc_type': 'bao_gia',
+                'customer_id': self.customer_id.id if self.customer_id else False,
+                'related_quotation_id': self.id,
+                'status': 'draft',
+            }
+            doc = self.env['van_ban.document'].create(doc_vals)
+        # decide incoming vs outgoing based on `source`
+        if self.source == 'customer':
+            incoming = self.env['van_ban_den'].search([('document_id', '=', doc.id)], limit=1)
+            if not incoming:
+                try:
+                    self.env['van_ban_den'].create({
+                        'document_id': doc.id,
+                        'so_van_ban_den': doc.code or doc.name,
+                        'so_hieu_van_ban': doc.code or doc.name,
+                        'ten_van_ban': doc.name,
+                        'customer_id': self.customer_id.id if self.customer_id else False,
+                        'nhan_vien_nhan_id': self.customer_id.nhan_vien_phu_trach_id.id if self.customer_id and self.customer_id.nhan_vien_phu_trach_id else False,
+                        'trang_thai': 'moi'
+                    })
+                except Exception:
+                    _logger.exception('Không thể tạo van_ban_den cho báo giá %s', self.id)
+        else:
+            # ensure outgoing record exists
+            outgoing = self.env['van_ban_di'].search([('document_id', '=', doc.id)], limit=1)
+            if not outgoing:
+                try:
+                    self.env['van_ban_di'].create({
+                        'document_id': doc.id,
+                        'so_van_ban_di': doc.code or doc.name,
+                        'so_hieu_van_ban': doc.code or doc.name,
+                        'ten_van_ban': doc.name,
+                        'customer_id': self.customer_id.id if self.customer_id else False,
+                        'nhan_vien_tao_id': self.customer_id.nhan_vien_phu_trach_id.id if self.customer_id and self.customer_id.nhan_vien_phu_trach_id else False,
+                        'trang_thai': 'draft'
+                    })
+                except Exception:
+                    _logger.exception('Không thể tạo van_ban_di cho báo giá %s', self.id)
+
+    def write(self, vals):
+        old_status = {rec.id: rec.status for rec in self}
+        result = super().write(vals)
+
+        if 'status' in vals:
+            for rec in self:
+                try:
+                    rec._ensure_linked_document()
+                    doc = rec._get_linked_document()
+                    if doc:
+                        # map quotation status to document.status
+                        mapping = {
+                            'nhap': 'draft',
+                            'da_gui': 'to_approve',
+                            'da_xem': 'to_approve',
+                            'dam_phan': 'to_approve',
+                            'chap_nhan': 'approved',
+                            'tu_choi': 'archived'
+                        }
+                        new_doc_status = mapping.get(rec.status, doc.status)
+                        doc.write({'status': new_doc_status})
+                        # create approval history if approved/rejected
+                        if rec.status in ['chap_nhan', 'tu_choi']:
+                            try:
+                                self.env['van_ban.approval'].create({
+                                    'document_id': doc.id,
+                                    'approver_id': rec.customer_id.nhan_vien_phu_trach_id.id if rec.customer_id and rec.customer_id.nhan_vien_phu_trach_id else False,
+                                    'approver_user_id': self.env.uid,
+                                    'status': 'approved' if rec.status == 'chap_nhan' else 'rejected',
+                                    'comment': 'Auto-created from quotation status change',
+                                    'level': 1
+                                })
+                            except Exception:
+                                _logger.exception('Không thể tạo lịch sử phê duyệt cho document %s', doc.id)
+                except Exception:
+                    _logger.exception('Lỗi khi sync document cho báo giá %s', rec.id)
+
+        return result
 
     def action_accept_quotation(self):
         self.ensure_one()

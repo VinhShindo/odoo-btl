@@ -7,7 +7,7 @@
         <menuitem id="menu_crm_customer" name="Khách hàng" parent="menu_crm_root" action="action_customer" sequence="1"/>
         <menuitem id="menu_crm_quotation" name="Báo giá" parent="menu_crm_root" action="action_quotation" sequence="2"/>
         <menuitem id="menu_crm_contract" name="Hợp đồng" parent="menu_crm_root" action="action_contract" sequence="3"/>
-        <menuitem id="menu_crm_interaction" name="Lịch sử giao dịch" parent="menu_crm_root" action="action_customer_interaction" sequence="4"/>
+        <menuitem id="menu_crm_interaction" name="Lịch sử tương tác" parent="menu_crm_root" action="action_customer_interaction" sequence="4"/>
         <menuitem
     id="menu_crm_appointment"
     name="Lịch hẹn"

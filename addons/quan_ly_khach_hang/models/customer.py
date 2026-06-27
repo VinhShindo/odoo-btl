@@ -37,7 +37,12 @@ class Customer(models.Model):
         ('medium', 'Trung bình'),
         ('high', 'Cao')
     ], string='Độ ưu tiên')
-    nhan_vien_phu_trach_id = fields.Many2one('hr.employee', string='Người phụ trách', required=True)
+    nhan_vien_phu_trach_id = fields.Many2one(
+        'hr.employee',
+        string='Người phụ trách',
+        required=False,
+        ondelete='set null'
+    )
     iot_device = fields.Char('Thiết bị IoT sử dụng')
     email = fields.Char('Email')
     phone = fields.Char('Số điện thoại')
@@ -86,6 +91,14 @@ class Customer(models.Model):
         'qlkh.contract',
         'customer_id',
         string='Hợp đồng'
+    )
+
+    product_ids = fields.Many2many(
+        'qlkh.contract_product',
+        'qlkh_customer_product_rel',
+        'customer_id',
+        'product_id',
+        string='Sản phẩm/Dịch vụ'
     )
 
     _sql_constraints = [
@@ -272,7 +285,9 @@ class Customer(models.Model):
             
             # Lấy danh sách tất cả nhân viên để đánh giá
             agents_meta = []
-            for emp in self.env['hr.employee'].search([]):
+            admin_user = self.env.ref('base.user_admin', raise_if_not_found=False)
+            admin_domain = [('user_id', '!=', admin_user.id)] if admin_user else []
+            for emp in self.env['hr.employee'].search(admin_domain):
                 # Tính điểm KPI hiện tại của nhân viên (càng cao càng tốt, nhưng cần cân bằng tải)
                 kpi_score = emp.diem_kpi if hasattr(emp, 'diem_kpi') and emp.diem_kpi else 0
                 current_customer_count = self.env['qlkh.customer'].search_count([
@@ -308,7 +323,7 @@ class Customer(models.Model):
             
             # Fallback: Chọn nhân viên có ít khách hàng nhất (load balancing)
             employees_with_load = []
-            for emp in self.env['hr.employee'].search([]):
+            for emp in self.env['hr.employee'].search(admin_domain):
                 load = self.env['qlkh.customer'].search_count([('nhan_vien_phu_trach_id', '=', emp.id)])
                 employees_with_load.append((emp, load))
             

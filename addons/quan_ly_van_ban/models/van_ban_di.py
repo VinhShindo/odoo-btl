@@ -25,8 +25,8 @@ class VanBanDi(models.Model):
     # Liên kết với các đối tượng khác
     loai_van_ban_id = fields.Many2one('loai_van_ban', string="Loại văn bản")
     customer_id = fields.Many2one('qlkh.customer', string="Khách hàng nhận")
-    nhan_vien_tao_id = fields.Many2one('hr.employee', string="Nhân viên tạo")
-    nhan_vien_ky_id = fields.Many2one('hr.employee', string="Người ký")
+    nhan_vien_tao_id = fields.Many2one('hr.employee', string="Nhân viên tạo", ondelete='set null')
+    nhan_vien_ky_id = fields.Many2one('hr.employee', string="Người ký", ondelete='set null')
     
     # Các trường thông tin khác
     nguoi_ky = fields.Char("Người ký (Tên)")

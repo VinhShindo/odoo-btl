@@ -8,7 +8,7 @@ class VanBanFolder(models.Model):
     _parent_store = True
     _parent_order = 'name'
     _inherit = ['mail.thread', 'mail.activity.mixin']
-
+    
     name = fields.Char('Tên thư mục', required=True)
     parent_id = fields.Many2one('van_ban.folder', string='Thư mục cha', index=True, ondelete='cascade')
     parent_left = fields.Integer(index=True)

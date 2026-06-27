@@ -114,6 +114,19 @@
                                 <field name="related_quotation_id"/>
                             </group>
                         </page>
+
+                        <page string="Phê duyệt" name="approval">
+                            <field name="approval_ids">
+                                <tree string="Lịch sử phê duyệt">
+                                    <field name="approve_date"/>
+                                    <field name="approver_id"/>
+                                    <field name="approver_user_id"/>
+                                    <field name="status"/>
+                                    <field name="level"/>
+                                    <field name="comment"/>
+                                </tree>
+                            </field>
+                        </page>
                         
                         <page string="Ghi chú" name="notes">
                             <field name="note" nolabel="1" placeholder="Ghi chú thêm..."/>

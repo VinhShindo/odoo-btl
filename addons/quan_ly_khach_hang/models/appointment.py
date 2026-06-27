@@ -19,7 +19,8 @@ class Appointment(models.Model):
 
     nhan_vien_id = fields.Many2one(
         'hr.employee',
-        string='Nhân viên phụ trách'
+        string='Nhân viên phụ trách',
+        ondelete='set null'
     )
 
     appointment_date = fields.Datetime(

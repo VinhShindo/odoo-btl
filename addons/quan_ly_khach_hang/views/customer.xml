@@ -43,6 +43,19 @@
                             <field name="revenue_total"
                                 readonly="1"/>
                         </group>
+                            <notebook>
+                                <page string="Sản phẩm/Dịch vụ">
+                                    <field name="product_ids">
+                                        <tree editable="bottom">
+                                            <field name="name"/>
+                                            <field name="code"/>
+                                            <field name="device_type"/>
+                                            <field name="list_price" widget="monetary"/>
+                                            <field name="active"/>
+                                        </tree>
+                                    </field>
+                                </page>
+                            </notebook>
                     </sheet>
                 </form>
             </field>

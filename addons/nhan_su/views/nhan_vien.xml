@@ -74,6 +74,36 @@
                                     </tree>
                                 </field>
                             </page>
+                            <page string="Hồ sơ điện tử">
+                                <field name="ho_so_dien_tu_ids" context="{'default_nhan_vien_id': active_id}">
+                                    <tree editable="bottom">
+                                        <field name="ho_so"/>
+                                        <field name="loai_ho_so"/>
+                                        <field name="ten_file"/>
+                                        <field name="ngay_dang_tai"/>
+                                    </tree>
+                                    <form>
+                                        <group col="2">
+                                            <group>
+                                                <field name="nhan_vien_id" invisible="1"/>
+                                                <field name="ho_so" placeholder="Tên hồ sơ..."/>
+                                                <field name="loai_ho_so"/>
+                                                <field name="ten_file" placeholder="Tên file..."/>
+                                            </group>
+                                            <group>
+                                                <field name="ngay_dang_tai"/>
+                                                <field name="van_ban_id" readonly="1"/>
+                                            </group>
+                                        </group>
+                                        <group>
+                                            <field name="tep_dinh_kem" filename="ten_file" widget="binary" placeholder="Tệp đính kèm..."/>
+                                        </group>
+                                        <group>
+                                            <field name="note" placeholder="Ghi chú..."/>
+                                        </group>
+                                    </form>
+                                </field>
+                            </page>
                         </notebook>
                     </sheet>
                 </form>

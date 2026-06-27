@@ -10,6 +10,7 @@
                         <group>
                             <field name="customer_id"/>
                             <field name="date"/>
+                                    <field name="status"/>
                             <field name="type"/>
                             <field name="content"/>
                             <field name="nhan_vien_id"/>
@@ -27,12 +28,13 @@
                     <field name="customer_id"/>
                     <field name="date"/>
                     <field name="type"/>
+                    <field name="status"/>
                     <field name="nhan_vien_id"/>
                 </tree>
             </field>
         </record>
         <record id="action_customer_interaction" model="ir.actions.act_window">
-            <field name="name">Lịch sử giao dịch</field>
+            <field name="name">Lịch sử tương tác</field>
             <field name="res_model">qlkh.customer_interaction</field>
             <field name="view_mode">tree,form</field>
         </record>

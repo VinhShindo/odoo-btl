@@ -7,7 +7,7 @@ class VanBanRouting(models.Model):
 
     name = fields.Char('Tiêu đề', required=True)
     document_id = fields.Many2one('van_ban.document', string='Văn bản', required=True, ondelete='cascade')
-    assigned_to = fields.Many2one('hr.employee', string='Người xử lý')
+    assigned_to = fields.Many2one('hr.employee', string='Người xử lý', ondelete='set null')
     stage = fields.Selection([
         ('to_process', 'Chờ xử lý'),
         ('in_progress', 'Đang xử lý'),
@@ -40,11 +40,16 @@ class VanBanRouting(models.Model):
                 self.env['van_ban.approval'].create({
                     'document_id': rec.document_id.id,
                     'approver_id': employee.id if employee else False,
-                    'status': 'approved'
+                    'approver_user_id': self.env.uid,
+                    'status': 'approved',
+                    'comment': f'Approved via routing stage {rec.stage}',
+                    'level': 1
                 })
 
     def action_reject(self):
         for rec in self:
             rec.stage = 'rejected'
             if rec.document_id:
-                rec.document_id.status = 'draft'
+                rec.document_id.write({
+                    'status': 'draft'
+                })

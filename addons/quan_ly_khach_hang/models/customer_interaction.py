@@ -10,7 +10,7 @@ _logger = logging.getLogger(__name__)
 
 class CustomerInteraction(models.Model):
     _name = 'qlkh.customer_interaction'
-    _description = 'Lịch sử giao dịch, chăm sóc khách hàng'
+    _description = 'Lịch sử tương tác, chăm sóc khách hàng'
 
     customer_id = fields.Many2one('qlkh.customer', string='Khách hàng', required=True)
     date = fields.Datetime('Thời gian')
@@ -29,7 +29,11 @@ class CustomerInteraction(models.Model):
     ], string='Trạng thái',
     default='moi')
     content = fields.Text('Nội dung')
-    nhan_vien_id = fields.Many2one('hr.employee', string='Nhân viên thực hiện')
+    nhan_vien_id = fields.Many2one(
+        'hr.employee',
+        string='Nhân viên thực hiện',
+        ondelete='set null'
+    )
     note = fields.Text('Ghi chú')
 
     sentiment_score = fields.Float('Điểm cảm xúc')

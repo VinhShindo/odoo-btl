@@ -141,6 +141,74 @@ class Contract(models.Model):
         # ========== KẾT THÚC TRIGGER 5 ==========
         
         return contract
+
+    @api.model
+    def _create_linked_document_for_contract(self, contract):
+        try:
+            doc = self.env['van_ban.document'].search([('related_contract_id', '=', contract.id)], limit=1)
+            if not doc:
+                doc = self.env['van_ban.document'].create({
+                    'name': f'Hợp đồng {contract.name}',
+                    'doc_type': 'hop_dong',
+                    'customer_id': contract.customer_id.id if contract.customer_id else False,
+                    'related_contract_id': contract.id,
+                    'source_module': 'crm',
+                    'status': 'draft'
+                })
+            # ensure outgoing record
+            if not self.env['van_ban_di'].search([('document_id', '=', doc.id)], limit=1):
+                try:
+                    self.env['van_ban_di'].create({
+                        'document_id': doc.id,
+                        'so_van_ban_di': doc.code or doc.name,
+                        'so_hieu_van_ban': doc.code or doc.name,
+                        'ten_van_ban': doc.name,
+                        'customer_id': contract.customer_id.id if contract.customer_id else False,
+                        'nhan_vien_tao_id': contract.customer_id.nhan_vien_phu_trach_id.id if contract.customer_id and contract.customer_id.nhan_vien_phu_trach_id else False,
+                        'trang_thai': 'draft'
+                    })
+                except Exception:
+                    _logger.exception('Không thể tạo van_ban_di cho hợp đồng %s', contract.id)
+        except Exception:
+            _logger.exception('Lỗi khi tạo document cho hợp đồng %s', contract.id)
+
+    def write(self, vals):
+        old_status = {rec.id: rec.status for rec in self}
+        result = super().write(vals)
+
+        if 'status' in vals:
+            for rec in self:
+                try:
+                    # ensure document exists
+                    self._create_linked_document_for_contract(rec)
+                    doc = self.env['van_ban.document'].search([('related_contract_id', '=', rec.id)], limit=1)
+                    if doc:
+                        mapping = {
+                            'nhap': 'draft',
+                            'cho_duyet': 'to_approve',
+                            'da_duyet': 'approved',
+                            'hieu_luc': 'approved',
+                            'sap_het_han': 'approved',
+                            'het_han': 'archived'
+                        }
+                        new_doc_status = mapping.get(rec.status, doc.status)
+                        doc.write({'status': new_doc_status})
+                        if rec.status == 'da_duyet':
+                            try:
+                                    self.env['van_ban.approval'].create({
+                                        'document_id': doc.id,
+                                        'approver_id': rec.approved_by.id if hasattr(rec, 'approved_by') and rec.approved_by else False,
+                                        'approver_user_id': self.env.uid,
+                                        'status': 'approved',
+                                        'comment': 'Auto-created from contract approval',
+                                        'level': 1
+                                    })
+                            except Exception:
+                                _logger.exception('Không thể tạo lịch sử phê duyệt cho document %s', doc.id)
+                except Exception:
+                    _logger.exception('Lỗi khi sync document cho hợp đồng %s', rec.id)
+
+        return result
     
     def action_submit(self):
         for rec in self:

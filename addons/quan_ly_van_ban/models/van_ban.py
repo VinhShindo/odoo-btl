@@ -47,7 +47,12 @@ class VanBan(models.Model):
     # Relationships
     customer_id = fields.Many2one('qlkh.customer', string='Khách hàng', tracking=True)
     folder_id = fields.Many2one('van_ban.folder', string='Thư mục', tracking=True)
-    nhan_vien_id = fields.Many2one('hr.employee', string='Nhân viên chịu trách nhiệm', tracking=True)
+    nhan_vien_id = fields.Many2one(
+        'hr.employee',
+        string='Nhân viên chịu trách nhiệm',
+        tracking=True,
+        ondelete='set null'
+    )
     related_contract_id = fields.Many2one('qlkh.contract', string='Hợp đồng liên quan')
     related_quotation_id = fields.Many2one('qlkh.quotation', string='Báo giá liên quan')
     
