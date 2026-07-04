@@ -7,214 +7,363 @@
 .hr-dashboard-container {
     height: 100%;
     min-height: 500px;
-    padding: 28px;
-    background: radial-gradient(circle at top, rgba(56,189,248,0.08), transparent 25%), linear-gradient(180deg, #0F172A 0%, #111827 100%);
-    color: #e2e8f0;
-    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    padding: 32px;
+    background: #f4f6f9 !important;
+    color: #1f2937;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     overflow-y: auto;
     overflow-x: hidden;
 }
 
-/* Scrollbar styling */
+/* Custom Scrollbar */
 .hr-dashboard-container::-webkit-scrollbar {
     width: 8px;
 }
 
 .hr-dashboard-container::-webkit-scrollbar-track {
-    background: rgba(255,255,255,0.08);
-    border-radius: 4px;
+    background: #e2e8f0;
+    border-radius: 10px;
 }
 
 .hr-dashboard-container::-webkit-scrollbar-thumb {
-    background: rgba(56,189,248,0.5);
-    border-radius: 4px;
-    transition: background 0.2s;
+    background: #94a3b8;
+    border-radius: 10px;
 }
 
 .hr-dashboard-container::-webkit-scrollbar-thumb:hover {
-    background: rgba(56,189,248,0.8);
+    background: #64748b;
 }
 
-/* Firefox scrollbar */
 .hr-dashboard-container {
     scrollbar-width: thin;
-    scrollbar-color: rgba(56,189,248,0.5) rgba(255,255,255,0.08);
+    scrollbar-color: #94a3b8 #e2e8f0;
 }
 
+/* HEADER */
 .dashboard-header {
     margin-bottom: 32px;
-    padding: 26px;
-    border-radius: 16px;
-    background: rgba(17,24,39,0.85);
-    border: 1px solid rgba(255,255,255,0.08);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    backdrop-filter: blur(14px);
+    padding: 24px 28px;
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
 }
 
 .dashboard-header h1 {
     margin: 0 0 24px 0;
-    color: #f8fafc;
+    color: #0f172a;
     font-size: 28px;
-    font-weight: 600;
+    font-weight: 700;
+    letter-spacing: -0.01em;
 }
 
+/* STATS CARDS - Đã thêm lại ::before */
 .header-stats {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 18px;
 }
 
 .stat-card {
     position: relative;
-    padding: 22px;
+    padding: 20px 24px;
+    background: #f8fafc;
     border-radius: 16px;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
-    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
 }
 
 .stat-card::before {
     content: '';
     position: absolute;
-    top: 22px;
-    right: 22px;
+    top: 18px;
+    right: 18px;
     width: 34px;
     height: 34px;
     border-radius: 12px;
-    background: rgba(56,189,248,0.16);
+    background: rgba(56, 189, 248, 0.16);
 }
 
 .stat-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 14px 32px rgba(0,0,0,0.22);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.06);
+    border-color: #cbd5e1;
 }
 
 .stat-label {
     display: block;
-    margin-bottom: 10px;
-    color: #94a3b8;
+    color: #64748b;
     font-size: 13px;
-    letter-spacing: 0.08em;
+    font-weight: 600;
     text-transform: uppercase;
-    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
 }
 
 .stat-value {
-    color: #f8fafc;
+    color: #0f172a;
     font-size: 32px;
     font-weight: 700;
-    line-height: 1.05;
+    line-height: 1.2;
 }
 
+/* CHART BOXES - Đã xóa cứng 280px, chuyển sang flex center */
 .dashboard-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
     gap: 24px;
-    margin-top: 24px;
 }
 
 .chart-box {
-    position: relative;
+    background: #ffffff;
+    border-radius: 20px;
     padding: 24px;
-    border-radius: 16px;
-    background: rgba(17,24,39,0.85);
-    border: 1px solid rgba(255,255,255,0.08);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    backdrop-filter: blur(14px);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    min-height: 340px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    border: 1px solid #e2e8f0;
     display: flex;
     flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    height: 340px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .chart-box:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 18px 40px rgba(0,0,0,0.24);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
 }
 
 .chart-box h3 {
-    margin: 0 0 18px 0;
-    color: #f8fafc;
-    font-size: 18px;
+    width: 100%;
+    margin: 0 0 16px 0;
+    color: #0f172a;
+    font-size: 16px;
     font-weight: 600;
+    text-align: center;
 }
 
+/* QUAN TRỌNG: Bỏ width/height cứng, dùng max-width để Chart tự do giãn theo khung */
 .chart-box canvas {
-    width: 100% !important;
-    max-height: 320px;
+    max-width: 100%;
+    max-height: 220px;
+    /* Giới hạn chiều cao để nhường chỗ cho Legend */
+    width: auto !important;
+    height: auto !important;
 }
 
+/* GAUGE */
 .gauge-container {
-    min-height: 240px;
+    min-height: 180px;
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 100%;
+    height: 100%;
 }
 
+/* RECENT LIST */
 .recent-list {
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    max-height: 420px;
+    gap: 12px;
+    width: 100%;
+    max-height: 250px;
     overflow-y: auto;
-    padding-right: 4px;
-}
-
-.recent-list::-webkit-scrollbar {
-    width: 6px;
-}
-
-.recent-list::-webkit-scrollbar-track {
-    background: rgba(255,255,255,0.04);
-    border-radius: 4px;
-}
-
-.recent-list::-webkit-scrollbar-thumb {
-    background: rgba(56,189,248,0.4);
-    border-radius: 4px;
-}
-
-.recent-list::-webkit-scrollbar-thumb:hover {
-    background: rgba(56,189,248,0.7);
 }
 
 .recent-item {
-    padding: 18px;
-    background: rgba(255,255,255,0.04);
-    border-radius: 16px;
-    border: 1px solid rgba(255,255,255,0.08);
-    transition: background 0.25s ease, transform 0.25s ease;
+    padding: 14px 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    transition: background 0.2s;
 }
 
 .recent-item:hover {
-    background: rgba(255,255,255,0.08);
-    transform: translateY(-2px);
+    background: #f1f5f9;
 }
 
 .recent-item-name {
-    color: #f8fafc;
+    color: #0f172a;
     font-weight: 600;
 }
 
 .recent-item-details {
-    margin-top: 8px;
+    margin-top: 4px;
     font-size: 13px;
-    color: #94a3b8;
+    color: #64748b;
 }
 
+/* Responsive */
 @media (max-width: 768px) {
     .dashboard-grid {
         grid-template-columns: 1fr;
     }
+
     .header-stats {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
-@media (max-width: 520px) {
-    .header-stats {
-        grid-template-columns: 1fr;
+/* ===== KANBAN (Giữ nguyên) ===== */
+.o_kanban_view {
+    padding: 15px;
+    background: #f8f9fa !important;
+}
+
+.o_kanban_view .o_column {
+    background: #ffffff !important;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05) !important;
+    margin-right: 16px !important;
+    padding: 8px !important;
+    min-height: 600px;
+}
+
+.o_kanban_view .o_column .o_kanban_header {
+    padding: 15px 18px !important;
+    border-bottom: 1px solid #e9ecef;
+    margin-bottom: 12px;
+    background: #ffffff;
+    border-radius: 12px 12px 0 0;
+}
+
+.o_kanban_view .o_column .o_kanban_header_title {
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    color: #1f2937 !important;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.o_kanban_view .o_column .o_kanban_header_title:after {
+    content: attr(data-count);
+    background: #e0e7ff;
+    color: #4f46e5;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.o_kanban_view .oe_kanban_global_click {
+    background: #ffffff !important;
+    border: 1px solid #f1f3f5 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    margin: 0 4px 12px 4px !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.o_kanban_view .oe_kanban_global_click:hover {
+    transform: translateY(-6px) !important;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12) !important;
+    border-color: #cbd5e1 !important;
+}
+
+.o_kanban_view .oe_kanban_global_click .o_kanban_image {
+    border-radius: 50%;
+    border: 2px solid #f1f5f9;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease;
+}
+
+.o_kanban_view .oe_kanban_global_click:hover .o_kanban_image {
+    transform: scale(1.05);
+}
+
+.o_kanban_view .stat-badge {
+    background: #f8fafc;
+    border-radius: 6px;
+    padding: 4px 0;
+    transition: background 0.2s;
+}
+
+.o_kanban_view .oe_kanban_global_click:hover .stat-badge {
+    background: #f1f5f9;
+}
+
+.stat-badge .value {
+    color: #1e293b;
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.stat-badge .label {
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.status-badge-active {
+    background: #dcfce7 !important;
+    color: #166534 !important;
+    border: 1px solid #86efac;
+}
+
+.status-badge-inactive {
+    background: #fee2e2 !important;
+    color: #991b1b !important;
+    border: 1px solid #fca5a5;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 6px;
+}
+
+.dot-active {
+    background: #22c55e;
+}
+
+.dot-inactive {
+    background: #ef4444;
+}
+
+.badge-ribbon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #10b981;
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 20px;
+    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    z-index: 10;
+}
+
+.o_kanban_view .o_column::-webkit-scrollbar {
+    width: 6px;
+}
+
+.o_kanban_view .o_column::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+.o_kanban_view .o_column::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.o_kanban_view .o_column::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+@media (max-width: 768px) {
+    .o_kanban_view .o_column {
+        min-width: 95% !important;
+        margin-right: 0 !important;
+        margin-bottom: 20px;
     }
 }

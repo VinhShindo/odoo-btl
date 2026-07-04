@@ -3,7 +3,7 @@
     <!-- Client Action -->
     <record id="action_hr_dashboard_new" model="ir.actions.client">
         <field name="name">Dashboard Nhân sự</field>
-        <field name="tag">hr_dashboard_action</field>
+        <field name="tag">nhan_su_dashboard_action</field>
         <field name="target">main</field>
     </record>
 </odoo>

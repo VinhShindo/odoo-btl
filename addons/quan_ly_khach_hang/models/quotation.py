@@ -26,43 +26,28 @@ class Quotation(models.Model):
         ('dam_phan', 'Đàm phán'),
         ('chap_nhan', 'Chấp nhận'),
         ('tu_choi', 'Từ chối')
-    ],
-    string='Trạng thái',
-    default='nhap')
+    ], string='Trạng thái', default='nhap')
     file = fields.Binary('File báo giá')
     file_name = fields.Char('Tên file báo giá')
     note = fields.Text('Ghi chú')
     meet_url = fields.Char('Link Google Meet')
-    contract_ids = fields.One2many(
-        'qlkh.contract',
-        'quotation_id',
-        string='Hợp đồng'
-    )
-    line_ids = fields.One2many(
-        'qlkh.quotation.line',
-        'quotation_id',
-        string='Chi tiết sản phẩm'
-    )
+    contract_ids = fields.One2many('qlkh.contract', 'quotation_id', string='Hợp đồng')
+    line_ids = fields.One2many('qlkh.quotation.line', 'quotation_id', string='Chi tiết sản phẩm')
     quotation_value = fields.Float(
         string='Giá trị báo giá',
         compute='_compute_quotation_value',
         store=True
     )
 
-    _sql_constraints = [
-        ('name_unique', 'unique(name)', 'Số báo giá phải là duy nhất!')
-    ]
+    _sql_constraints = [('name_unique', 'unique(name)', 'Số báo giá phải là duy nhất!')]
 
     def _compute_quotation_value(self):
         for rec in self:
-            rec.quotation_value = sum(
-                rec.line_ids.mapped('price_total')
-            ) if rec.line_ids else 0.0
+            rec.quotation_value = sum(rec.line_ids.mapped('price_total')) if rec.line_ids else 0.0
 
     @api.model
     def create(self, vals):
         quotation = super().create(vals)
-        # ensure there is a linked document and outgoing record
         try:
             quotation._ensure_linked_document()
         except Exception as e:
@@ -73,6 +58,7 @@ class Quotation(models.Model):
         old_status = {rec.id: rec.status for rec in self}
         result = super().write(vals)
 
+        # Kiểm tra nếu đổi trạng thái sang Đàm phán
         if 'status' in vals and vals['status'] == 'dam_phan':
             for rec in self:
                 if old_status.get(rec.id) != 'dam_phan':
@@ -81,16 +67,19 @@ class Quotation(models.Model):
                     except Exception as e:
                         _logger.exception('Lỗi lên lịch đàm phán cho báo giá %s: %s', rec.id, e)
 
+        # 🔥 QUAN TRỌNG: Nếu các dòng chi tiết bị thay đổi, ép Odoo tính lại tổng tiền ngay
+        if 'line_ids' in vals:
+            for rec in self:
+                rec._compute_quotation_value()
+
         return result
 
     def _schedule_negotiation_meeting(self):
         self.ensure_one()
         if self.status != 'dam_phan' or self.meet_url:
             return
-
         if not self.customer_id or not self.customer_id.email:
             return
-
         try:
             sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../../addons'))
             from smart_biz_services.google_helper import GoogleHelper
@@ -106,12 +95,10 @@ class Quotation(models.Model):
                 title=title,
                 duration_minutes=30
             )
-
             if not meeting_link:
                 return
 
             super(Quotation, self).write({'meet_url': meeting_link})
-
             activity_type = self.env.ref('mail.mail_activity_data_todo', raise_if_not_found=False)
             if activity_type:
                 self.env['mail.activity'].create({
@@ -144,12 +131,10 @@ class Quotation(models.Model):
             _logger.exception('Lỗi tạo cuộc họp đàm phán: %s', e)
 
     def action_send_email(self):
-        # Logic gửi email báo giá cho khách hàng
         for rec in self:
             rec.status = 'da_gui'
             try:
                 rec._ensure_linked_document()
-                # set document status to 'to_approve' when sent
                 if rec._get_linked_document():
                     doc = rec._get_linked_document()
                     doc.write({'status': 'to_approve'})
@@ -178,11 +163,9 @@ class Quotation(models.Model):
         return self.env['van_ban.document'].search([('related_quotation_id', '=', self.id)], limit=1)
 
     def _ensure_linked_document(self):
-        """Create or update a van_ban.document and van_ban_di record linked to this quotation."""
         self.ensure_one()
         doc = self._get_linked_document()
         if not doc:
-            # create document
             doc_vals = {
                 'name': f'Báo giá {self.name}',
                 'doc_type': 'bao_gia',
@@ -191,7 +174,6 @@ class Quotation(models.Model):
                 'status': 'draft',
             }
             doc = self.env['van_ban.document'].create(doc_vals)
-        # decide incoming vs outgoing based on `source`
         if self.source == 'customer':
             incoming = self.env['van_ban_den'].search([('document_id', '=', doc.id)], limit=1)
             if not incoming:
@@ -208,7 +190,6 @@ class Quotation(models.Model):
                 except Exception:
                     _logger.exception('Không thể tạo van_ban_den cho báo giá %s', self.id)
         else:
-            # ensure outgoing record exists
             outgoing = self.env['van_ban_di'].search([('document_id', '=', doc.id)], limit=1)
             if not outgoing:
                 try:
@@ -234,7 +215,6 @@ class Quotation(models.Model):
                     rec._ensure_linked_document()
                     doc = rec._get_linked_document()
                     if doc:
-                        # map quotation status to document.status
                         mapping = {
                             'nhap': 'draft',
                             'da_gui': 'to_approve',
@@ -245,7 +225,6 @@ class Quotation(models.Model):
                         }
                         new_doc_status = mapping.get(rec.status, doc.status)
                         doc.write({'status': new_doc_status})
-                        # create approval history if approved/rejected
                         if rec.status in ['chap_nhan', 'tu_choi']:
                             try:
                                 self.env['van_ban.approval'].create({
@@ -275,7 +254,6 @@ class Quotation(models.Model):
             'contract_value': self.quotation_value,
             'status': 'nhap',
         })
-
         return {
             'type': 'ir.actions.act_window',
             'res_model': 'qlkh.contract',
@@ -283,3 +261,42 @@ class Quotation(models.Model):
             'view_mode': 'form',
             'target': 'current',
         }
+
+
+class QuotationLine(models.Model):
+    _name = 'qlkh.quotation.line'
+    _description = 'Dòng chi tiết báo giá'
+    _rec_name = 'description'
+    _order = 'id'
+
+    quotation_id = fields.Many2one('qlkh.quotation', string='Báo giá', required=True, ondelete='cascade')
+    product_id = fields.Many2one('qlkh.contract_product', string='Sản phẩm', help='Chọn sản phẩm/dịch vụ từ danh mục')
+    # product_name giờ chỉ để lưu tên cũ khi chọn sản phẩm, không nhập tay
+    product_name = fields.Char(string='Tên sản phẩm', help='Tên sản phẩm hoặc dịch vụ')
+    description = fields.Char(string='Mô tả', required=True)
+    quantity = fields.Float(string='Số lượng', default=1.0, required=True)
+    unit_price = fields.Float(string='Đơn giá', required=True)
+    vat_rate = fields.Float(string='VAT (%)', default=10.0)
+    price_subtotal = fields.Float(string='Thành tiền trước VAT', compute='_compute_amount', store=True)
+    price_tax = fields.Float(string='VAT', compute='_compute_amount', store=True)
+    price_total = fields.Float(string='Thành tiền', compute='_compute_amount', store=True)
+
+    @api.depends('quantity', 'unit_price', 'vat_rate')
+    def _compute_amount(self):
+        for rec in self:
+            subtotal = rec.quantity * rec.unit_price
+            tax = subtotal * (rec.vat_rate or 0.0) / 100.0
+            rec.price_subtotal = subtotal
+            rec.price_tax = tax
+            rec.price_total = subtotal + tax
+
+    @api.onchange('product_id')
+    def _onchange_product_id(self):
+        """Khi chọn sản phẩm từ dropdown, tự động điền đơn giá, mô tả và tên"""
+        for rec in self:
+            if rec.product_id:
+                rec.product_name = rec.product_id.name
+                if not rec.unit_price or rec.unit_price == 0.0:
+                    rec.unit_price = rec.product_id.list_price or 0.0
+                if not rec.description:
+                    rec.description = rec.product_id.technical_specs or ''

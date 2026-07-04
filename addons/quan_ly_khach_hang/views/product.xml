@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
+        <!-- FORM VIEW -->
         <record id="view_contract_product_form" model="ir.ui.view">
             <field name="name">qlkh.contract.product.form</field>
             <field name="model">qlkh.contract_product</field>
@@ -23,11 +24,15 @@
                             <field name="technical_specs"/>
                             <field name="support_info"/>
                         </group>
+                        <group>
+                            <field name="active"/>
+                        </group>
                     </sheet>
                 </form>
             </field>
         </record>
 
+        <!-- TREE VIEW -->
         <record id="view_contract_product_tree" model="ir.ui.view">
             <field name="name">qlkh.contract.product.tree</field>
             <field name="model">qlkh.contract_product</field>
@@ -38,16 +43,41 @@
                     <field name="category"/>
                     <field name="device_type"/>
                     <field name="list_price"/>
+                    <field name="active"/>
                 </tree>
             </field>
         </record>
 
+        <!-- SEARCH VIEW (Bổ sung để tìm kiếm sản phẩm dễ dàng) -->
+        <record id="view_contract_product_search" model="ir.ui.view">
+            <field name="name">qlkh.contract.product.search</field>
+            <field name="model">qlkh.contract_product</field>
+            <field name="arch" type="xml">
+                <search>
+                    <field name="name"/>
+                    <field name="code"/>
+                    <field name="category"/>
+                    <field name="device_type"/>
+                    <filter name="active_product" string="Đang hoạt động" domain="[('active','=',True)]"/>
+                    <filter name="inactive_product" string="Ngừng kinh doanh" domain="[('active','=',False)]"/>
+                </search>
+            </field>
+        </record>
+
+        <!-- ACTION WINDOW (BẮT BUỘC PHẢI CÓ ĐỂ MENU HOẠT ĐỘNG) -->
         <record id="action_contract_product" model="ir.actions.act_window">
             <field name="name">Danh mục sản phẩm IoT</field>
             <field name="res_model">qlkh.contract_product</field>
             <field name="view_mode">tree,form</field>
+            <field name="search_view_id" ref="view_contract_product_search"/>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Tạo sản phẩm/dịch vụ IoT đầu tiên
+                </p>
+                <p>
+                    Quản lý danh mục sản phẩm/dịch vụ để đưa vào Báo giá và Hợp đồng.
+                </p>
+            </field>
         </record>
-
-        <!-- ĐÃ XÓA dòng menuitem này vì đã có trong menu.xml -->
     </data>
 </odoo>

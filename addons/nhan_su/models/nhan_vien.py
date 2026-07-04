@@ -42,6 +42,7 @@ class NhanVien(models.Model):
         'nhan_vien_id',
         string='Hồ sơ điện tử'
     )
+    chuc_vu_id = fields.Many2one('chuc_vu', string='Chức vụ', ondelete='set null')
 
     @api.model
     def _get_employee_domain_exclude_admin(self):

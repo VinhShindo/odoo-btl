@@ -5,3 +5,5 @@ access_contract,qlkh.contract,model_qlkh_contract,base.group_user,1,1,1,1
 access_customer_interaction,qlkh.customer_interaction,model_qlkh_customer_interaction,base.group_user,1,1,1,1
 access_appointment,qlkh.appointment,model_qlkh_appointment,base.group_user,1,1,1,1
 access_quotation_line,qlkh.quotation.line,model_qlkh_quotation_line,base.group_user,1,1,1,1
+access_contract_product,qlkh.contract_product,model_qlkh_contract_product,base.group_user,1,1,1,1
+access_appointment_user,qlkh.appointment,model_qlkh_appointment,base.group_user,1,1,1,1

@@ -1,19 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-    <menuitem id="menu_crm_root" name="Quản lý khách hàng" sequence="1"/>
+        <!-- Root Menu -->
+        <menuitem id="menu_crm_root" name="Quản lý khách hàng" sequence="1"/>
+        
+        <!-- Dashboard CRM -->
         <menuitem id="menu_crm_dashboard" name="Dashboard CRM" parent="menu_crm_root" 
                   action="action_crm_dashboard" sequence="0"/>
+        
+        <!-- Khách hàng -->
         <menuitem id="menu_crm_customer" name="Khách hàng" parent="menu_crm_root" action="action_customer" sequence="1"/>
+        
+        <!-- Báo giá -->
         <menuitem id="menu_crm_quotation" name="Báo giá" parent="menu_crm_root" action="action_quotation" sequence="2"/>
+        
+        <!-- Hợp đồng -->
         <menuitem id="menu_crm_contract" name="Hợp đồng" parent="menu_crm_root" action="action_contract" sequence="3"/>
+        
+        <!-- Lịch sử tương tác -->
         <menuitem id="menu_crm_interaction" name="Lịch sử tương tác" parent="menu_crm_root" action="action_customer_interaction" sequence="4"/>
-        <menuitem
-    id="menu_crm_appointment"
-    name="Lịch hẹn"
-    parent="menu_crm_root"
-    action="action_appointment"
-    sequence="5"/>
+        
+        <!-- Lịch hẹn -->
+        <menuitem id="menu_crm_appointment" name="Lịch hẹn" parent="menu_crm_root" action="action_appointment" sequence="5"/>
+        
+        <!-- Sản phẩm IoT (Đã có action hợp lệ) -->
         <menuitem id="menu_crm_products" name="Sản phẩm IoT" parent="menu_crm_root" action="action_contract_product" sequence="6"/>
     </data>
 </odoo>

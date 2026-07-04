@@ -2,4 +2,4 @@
 
 from . import controllers
 from . import preview
-from . import document_dashboard
+from . import doc_dashboard

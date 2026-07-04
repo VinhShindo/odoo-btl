@@ -1,4 +1,4 @@
-/* ===== ĐẢM BẢO CONTAINER CHA CÓ THỂ SCROLL ===== */
+/* Đảm bảo container cha có thể scroll */
 .o_content .o_view_manager_content {
     overflow: auto !important;
     height: 100% !important;
@@ -8,180 +8,144 @@
 .document-dashboard-container {
     height: 100%;
     min-height: 500px;
-    padding: 28px;
-    background: radial-gradient(circle at top, rgba(248,113,113,0.08), transparent 24%), linear-gradient(180deg, #0F172A 0%, #111827 100%);
-    color: #e2e8f0;
-    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    padding: 32px;
+    background: #f4f6f9 !important;
+    color: #1f2937;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     overflow-y: auto;
     overflow-x: hidden;
 }
 
-/* ===== SCROLLBAR STYLING - Chrome, Edge, Safari ===== */
-.document-dashboard-container::-webkit-scrollbar {
-    width: 8px;
-}
-
-.document-dashboard-container::-webkit-scrollbar-track {
-    background: rgba(255,255,255,0.08);
-    border-radius: 4px;
-}
-
-.document-dashboard-container::-webkit-scrollbar-thumb {
-    background: rgba(248,113,113,0.5);
-    border-radius: 4px;
-    transition: background 0.2s;
-}
-
-.document-dashboard-container::-webkit-scrollbar-thumb:hover {
-    background: rgba(248,113,113,0.8);
-}
-
-/* ===== SCROLLBAR STYLING - Firefox ===== */
-.document-dashboard-container {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(248,113,113,0.5) rgba(255,255,255,0.08);
-}
+/* ===== SCROLLBAR ===== */
+.document-dashboard-container::-webkit-scrollbar { width: 8px; }
+.document-dashboard-container::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 10px; }
+.document-dashboard-container::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
+.document-dashboard-container::-webkit-scrollbar-thumb:hover { background: #64748b; }
+.document-dashboard-container { scrollbar-width: thin; scrollbar-color: #94a3b8 #e2e8f0; }
 
 /* ===== HEADER ===== */
 .dashboard-header {
     margin-bottom: 32px;
-    padding: 26px;
-    border-radius: 16px;
-    background: rgba(17,24,39,0.85);
-    border: 1px solid rgba(255,255,255,0.08);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    backdrop-filter: blur(14px);
+    padding: 24px 28px;
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
 }
-
 .dashboard-header h1 {
     margin: 0 0 24px 0;
-    color: #f8fafc;
+    color: #0f172a;
     font-size: 28px;
-    font-weight: 600;
-    letter-spacing: -0.02em;
+    font-weight: 700;
+    letter-spacing: -0.01em;
 }
 
-/* ===== STATS ===== */
+/* ===== STATS CARDS ===== */
 .header-stats,
 .secondary-stats {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 18px;
 }
-
 .stat-card {
     position: relative;
-    padding: 22px;
+    padding: 20px 24px;
+    background: #f8fafc;
     border-radius: 16px;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
     overflow: hidden;
 }
-
 .stat-card--main::before {
     content: '';
     position: absolute;
-    top: 22px;
-    right: 22px;
+    top: 18px;
+    right: 18px;
     width: 34px;
     height: 34px;
     border-radius: 12px;
-    background: rgba(248,113,113,0.16);
+    background: rgba(248, 113, 113, 0.12);
 }
-
 .stat-card--secondary::before {
     content: '';
     position: absolute;
-    top: 22px;
-    right: 22px;
+    top: 18px;
+    right: 18px;
     width: 34px;
     height: 34px;
     border-radius: 12px;
-    background: rgba(59,130,246,0.16);
+    background: rgba(59, 130, 246, 0.12);
 }
-
 .stat-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 14px 32px rgba(0,0,0,0.22);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.06);
+    border-color: #cbd5e1;
 }
-
 .stat-label {
     display: block;
-    margin-bottom: 10px;
-    color: #94a3b8;
+    color: #64748b;
     font-size: 13px;
-    letter-spacing: 0.08em;
+    font-weight: 600;
     text-transform: uppercase;
-    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
 }
-
 .stat-value {
-    color: #f8fafc;
+    color: #0f172a;
     font-size: 32px;
     font-weight: 700;
-    line-height: 1.05;
+    line-height: 1.2;
 }
 
-/* ===== GRID ===== */
+/* ===== GRID CHART BOXES ===== */
 .dashboard-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
     gap: 24px;
     margin-top: 24px;
 }
-
-/* ===== CHART BOX ===== */
 .chart-box {
     position: relative;
+    background: #ffffff;
+    border-radius: 20px;
     padding: 24px;
-    border-radius: 16px;
-    background: rgba(17,24,39,0.85);
-    border: 1px solid rgba(255,255,255,0.08);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    backdrop-filter: blur(14px);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    border: 1px solid #e2e8f0;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
     min-height: 340px;
+    height: 340px;
     display: flex;
     flex-direction: column;
-    animation: card-pop 0.35s ease forwards;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    box-sizing: border-box;
 }
-
 .chart-box:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 18px 40px rgba(0,0,0,0.24);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.06);
 }
-
-@keyframes card-pop {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
 .chart-box h3 {
-    margin: 0 0 15px 0;
-    color: #f8fafc;
-    font-size: 18px;
+    margin: 0 0 16px 0;
+    color: #0f172a;
+    font-size: 16px;
     font-weight: 600;
+    text-align: center;
 }
-
 .chart-box canvas {
-    width: 100% !important;
-    max-height: 320px;
+    max-width: 100%;
+    max-height: 220px;
+    width: auto !important;
+    height: auto !important;
 }
 
 /* ===== GAUGE ===== */
 .gauge-container {
-    min-height: 240px;
+    min-height: 180px;
     display: flex;
     justify-content: center;
     align-items: center;
+    width: 100%;
+    height: 100%;
 }
 
 /* ===== RECENT LIST ===== */
@@ -189,106 +153,52 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
-    max-height: 420px;
+    max-height: 250px;
     overflow-y: auto;
     padding-right: 4px;
+    width: 100%;
 }
-
-/* Scrollbar cho recent-list */
-.recent-list::-webkit-scrollbar {
-    width: 6px;
-}
-
-.recent-list::-webkit-scrollbar-track {
-    background: rgba(255,255,255,0.04);
-    border-radius: 4px;
-}
-
-.recent-list::-webkit-scrollbar-thumb {
-    background: rgba(248,113,113,0.4);
-    border-radius: 4px;
-}
-
-.recent-list::-webkit-scrollbar-thumb:hover {
-    background: rgba(248,113,113,0.7);
-}
+.recent-list::-webkit-scrollbar { width: 5px; }
+.recent-list::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 8px; }
+.recent-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
 
 .recent-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px;
-    background: rgba(255,255,255,0.04);
-    border-radius: 16px;
-    border: 1px solid rgba(255,255,255,0.08);
-    transition: background 0.25s ease, transform 0.25s ease;
+    padding: 14px 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    transition: background 0.2s ease, transform 0.2s ease;
 }
-
 .recent-item:hover {
-    background: rgba(255,255,255,0.08);
-    transform: translateY(-2px);
+    background: #f1f5f9;
+    transform: translateX(4px);
 }
-
 .recent-item-name {
     font-weight: 600;
-    color: #f8fafc;
+    color: #0f172a;
 }
-
 .recent-item-status {
     font-size: 12px;
-    padding: 6px 12px;
-    background: rgba(255,255,255,0.05);
+    padding: 4px 12px;
+    background: #e2e8f0;
     border-radius: 999px;
-    color: #cbd5e1;
+    color: #475569;
 }
-
 .recent-item-meta {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
     font-size: 12px;
-    color: #94a3b8;
-    margin-top: 6px;
+    color: #64748b;
+    margin-top: 4px;
 }
-
 .recent-item-date {
     font-size: 12px;
-    color: #94a3b8;
-    margin-top: 8px;
-}
-
-/* ===== STATUS COLORS ===== */
-.status-da_duyet {
-    background: rgba(34,197,94,0.16);
-    color: #a7f3d0;
-}
-
-.status-dang_xu_ly {
-    background: rgba(251,191,36,0.16);
-    color: #facc15;
-}
-
-.status-tao_moi {
-    background: rgba(156,163,175,0.16);
-    color: #cbd5e1;
-}
-
-/* ===== LOADING ===== */
-.loading-spinner {
-    text-align: center;
-    padding: 50px;
-    color: #94a3b8;
-}
-
-.loading-spinner i {
-    font-size: 48px;
-    color: #f5576c;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    color: #64748b;
+    margin-top: 4px;
 }
 
 /* ===== RESPONSIVE ===== */
@@ -301,10 +211,159 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
-
 @media (max-width: 520px) {
     .header-stats,
     .secondary-stats {
         grid-template-columns: 1fr;
+    }
+}
+
+/* ===== TỔNG THỂ KANBAN ===== */
+.o_kanban_view {
+    padding: 10px;
+    background: #f5f6fa !important;
+}
+
+/* ===== CÁC CỘT (COLUMN) ===== */
+.o_kanban_view .o_column {
+    background: #ffffff !important;
+    border-radius: 10px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+    margin-right: 12px !important;
+    padding-bottom: 10px !important;
+    min-height: 400px;
+}
+
+/* ===== TIÊU ĐỀ CỘT (COLUMN HEADER) ===== */
+.o_kanban_view .o_column .o_kanban_header {
+    padding: 12px 15px !important;
+    border-bottom: 2px solid #e9ecef;
+    margin-bottom: 8px;
+    border-radius: 10px 10px 0 0;
+    background: #fafbfc;
+}
+.o_kanban_view .o_column .o_kanban_header_title {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px;
+    color: #495057;
+}
+
+/* Màu tiêu đề cột theo trạng thái */
+.o_kanban_view .o_column[data-status="draft"] .o_kanban_header {
+    border-bottom-color: #6c757d;
+}
+.o_kanban_view .o_column[data-status="to_approve"] .o_kanban_header {
+    border-bottom-color: #ffc107;
+}
+.o_kanban_view .o_column[data-status="approved"] .o_kanban_header {
+    border-bottom-color: #28a745;
+}
+.o_kanban_view .o_column[data-status="archived"] .o_kanban_header {
+    border-bottom-color: #dc3545;
+}
+
+/* ===== TẤM THẺ (CARD) ===== */
+.o_kanban_view .oe_kanban_global_click {
+    background: #ffffff !important;
+    border: 1px solid #e9ecef !important;
+    border-radius: 8px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+    transition: all 0.2s ease-in-out !important;
+    margin: 0 10px 10px 10px !important;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Hiệu ứng khi di chuột vào thẻ */
+.o_kanban_view .oe_kanban_global_click:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12) !important;
+    border-color: #ced4da !important;
+}
+
+/* ===== MÀU VIỀN TRÁI THEO TRẠNG THÁI ===== */
+.o_kanban_view .oe_kanban_global_click[data-status="draft"] {
+    border-left: 4px solid #6c757d !important;
+}
+.o_kanban_view .oe_kanban_global_click[data-status="to_approve"] {
+    border-left: 4px solid #ffc107 !important;
+}
+.o_kanban_view .oe_kanban_global_click[data-status="approved"] {
+    border-left: 4px solid #28a745 !important;
+}
+.o_kanban_view .oe_kanban_global_click[data-status="archived"] {
+    border-left: 4px solid #dc3545 !important;
+}
+
+/* ===== BADGE SẮP HẠN (Góc phải trên thẻ) ===== */
+.o_kanban_view .badge-warning {
+    background: #ffc107 !important;
+    color: #212529 !important;
+    font-weight: 600 !important;
+    padding: 4px 8px !important;
+    font-size: 10px !important;
+    border-radius: 20px !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* ===== NÚT XEM (Footer thẻ) ===== */
+.o_kanban_view .btn-xs-secondary {
+    background: #f8f9fa !important;
+    border: 1px solid #dee2e6 !important;
+    color: #495057 !important;
+    padding: 4px 12px !important;
+    font-size: 12px !important;
+    border-radius: 4px !important;
+    transition: background 0.2s;
+}
+.o_kanban_view .btn-xs-secondary:hover {
+    background: #e9ecef !important;
+    border-color: #ced4da !important;
+}
+
+/* ===== LABEL TRẠNG THÁI (Badge dưới chân thẻ) ===== */
+/* Chờ duyệt */
+.o_kanban_view .badge-status-pending {
+    background: #fff3cd !important;
+    color: #856404 !important;
+    padding: 3px 10px !important;
+    border-radius: 12px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+}
+/* Đã duyệt */
+.o_kanban_view .badge-status-approved {
+    background: #d4edda !important;
+    color: #155724 !important;
+    padding: 3px 10px !important;
+    border-radius: 12px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+}
+/* Nháp */
+.o_kanban_view .badge-status-draft {
+    background: #e2e3e5 !important;
+    color: #383d41 !important;
+    padding: 3px 10px !important;
+    border-radius: 12px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+}
+/* Đã hủy */
+.o_kanban_view .badge-status-archived {
+    background: #f8d7da !important;
+    color: #721c24 !important;
+    padding: 3px 10px !important;
+    border-radius: 12px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+}
+
+/* ===== RESPONSIVE (Trên điện thoại) ===== */
+@media (max-width: 768px) {
+    .o_kanban_view .o_column {
+        min-width: 95% !important;
     }
 }

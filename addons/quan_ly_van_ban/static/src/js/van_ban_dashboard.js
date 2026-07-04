@@ -1,10 +1,10 @@
-odoo.define('quan_ly_van_ban.document_dashboard', function (require) {
+odoo.define('quan_ly_van_ban.van_ban_dashboard', function (require) {
     "use strict";
 
     var AbstractAction = require('web.AbstractAction');
     var core = require('web.core');
     
-    var DocumentDashboard = AbstractAction.extend({
+    var VanBanDashboard = AbstractAction.extend({
         template: 'quan_ly_van_ban.document_dashboard_template',
         
         init: function(parent, action) {
@@ -19,31 +19,20 @@ odoo.define('quan_ly_van_ban.document_dashboard', function (require) {
 
         _getTooltipConfig: function() {
             return {
-                enabled: true,
-                backgroundColor: 'rgba(15,23,42,0.95)',
-                titleColor: '#f8fafc',
-                bodyColor: '#e2e8f0',
-                borderColor: 'rgba(148,163,184,0.16)',
+                backgroundColor: '#ffffff',
+                titleColor: '#0f172a',
+                bodyColor: '#334155',
+                borderColor: '#e2e8f0',
                 borderWidth: 1,
-                padding: 12,
-                displayColors: false,
-                intersect: false,
-                mode: 'nearest',
-                position: 'nearest'
+                padding: 10,
+                cornerRadius: 8
             };
         },
 
         _getAxisConfig: function() {
             return {
-                grid: {
-                    color: 'rgba(148,163,184,0.12)',
-                    borderColor: 'rgba(148,163,184,0.16)',
-                    drawBorder: false
-                },
-                ticks: {
-                    color: '#cbd5e1',
-                    padding: 10
-                }
+                grid: { color: '#e2e8f0', borderColor: '#e2e8f0', drawBorder: false },
+                ticks: { color: '#64748b', padding: 10 }
             };
         },
 
@@ -51,14 +40,8 @@ odoo.define('quan_ly_van_ban.document_dashboard', function (require) {
             return {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    tooltip: this._getTooltipConfig(),
-                    legend: { display: false }
-                },
-                scales: {
-                    x: this._getAxisConfig(),
-                    y: Object.assign({}, this._getAxisConfig(), { beginAtZero: true })
-                },
+                plugins: { tooltip: this._getTooltipConfig(), legend: { display: false } },
+                scales: { x: this._getAxisConfig(), y: Object.assign({}, this._getAxisConfig(), { beginAtZero: true }) },
                 animation: { duration: 600, easing: 'easeOutQuart' }
             };
         },
@@ -72,36 +55,54 @@ odoo.define('quan_ly_van_ban.document_dashboard', function (require) {
                     tooltip: this._getTooltipConfig(),
                     legend: {
                         position: 'bottom',
+                        align: 'center',
+                        maxWidth: 280,
                         labels: {
-                            color: '#cbd5e1',
+                            color: '#64748b',
                             usePointStyle: true,
                             pointStyle: 'circle',
-                            padding: 18
+                            padding: 12,
+                            font: { size: 11 }
                         }
                     }
                 },
                 hoverOffset: 12,
-                animation: { duration: 600, easing: 'easeOutQuart' }
+                animation: { duration: 600, easing: 'easeOutQuart' },
+                resizeDelay: 0
             };
         },
 
         _getCenterTextPlugin: function(value, label) {
-            var id = 'centerText_' + Math.random().toString(36).substr(2, 6);
             return {
-                id: id,
+                id: 'centerText_' + Math.random().toString(36).substr(2, 6),
                 afterDraw: function(chart) {
                     var ctx = chart.ctx;
                     var width = chart.width;
                     var height = chart.height;
+                    
                     ctx.save();
-                    ctx.font = '600 20px Inter, ui-sans-serif, system-ui';
-                    ctx.fillStyle = '#f8fafc';
+                    ctx.font = '700 20px Inter, ui-sans-serif, system-ui';
+                    var bigTextMetrics = ctx.measureText(value);
+                    var bigTextHeight = bigTextMetrics.actualBoundingBoxAscent + bigTextMetrics.actualBoundingBoxDescent;
+
+                    ctx.font = '400 12px Inter, ui-sans-serif, system-ui';
+                    var smallTextMetrics = ctx.measureText(label || 'Tổng');
+                    var smallTextHeight = smallTextMetrics.actualBoundingBoxAscent + smallTextMetrics.actualBoundingBoxDescent;
+
+                    var totalTextHeight = bigTextHeight + smallTextHeight + 4;
+                    var centerY = height / 2;
+                    var startY = centerY - (totalTextHeight / 2) + bigTextHeight / 2;
+
+                    ctx.font = '700 20px Inter, ui-sans-serif, system-ui';
+                    ctx.fillStyle = '#0f172a';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillText(value, width / 2, height / 2 - 10);
+                    ctx.fillText(value, width / 2, startY);
+
                     ctx.font = '400 12px Inter, ui-sans-serif, system-ui';
-                    ctx.fillStyle = '#94a3b8';
-                    ctx.fillText(label || 'Tổng', width / 2, height / 2 + 14);
+                    ctx.fillStyle = '#64748b';
+                    ctx.fillText(label || 'Tổng', width / 2, startY + bigTextHeight/2 + smallTextHeight/2 + 4);
+                    
                     ctx.restore();
                 }
             };
@@ -120,7 +121,7 @@ odoo.define('quan_ly_van_ban.document_dashboard', function (require) {
         _loadDashboardData: function() {
             var self = this;
             this._rpc({
-                route: '/dashboard/document/data',
+                route: '/dashboard/van_ban/data',
                 params: {}
             }).then(function(result) {
                 if (result.status === 'success') {
@@ -157,25 +158,18 @@ odoo.define('quan_ly_van_ban.document_dashboard', function (require) {
             var ctx = document.getElementById('chart_doc_by_type');
             if (!ctx) return;
             if (this.charts.typeChart) this.charts.typeChart.destroy();
-
-            var labels = Object.keys(data);
-            var values = Object.values(data);
-            if (!labels.length) {
-                labels = ['Không có dữ liệu'];
-                values = [1];
-            }
-            var total = values.reduce(function(sum, val) { return sum + val; }, 0);
-
+            var labels = Object.keys(data), values = Object.values(data);
+            if (!labels.length) { labels = ['Không có dữ liệu']; values = [1]; }
+            var total = values.reduce((a,b) => a+b, 0);
             this.charts.typeChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: labels,
                     datasets: [{
                         data: values,
-                        backgroundColor: ['#60a5fa', '#38bdf8', '#22c55e', '#f97316', '#c084fc', '#facc15'],
-                        borderWidth: 0,
-                        borderRadius: 8,
-                        hoverOffset: 14
+                        backgroundColor: ['#3b82f6', '#14b8a6', '#8b5cf6', '#f97316', '#ec4899', '#eab308'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
                     }]
                 },
                 plugins: [this._getCenterTextPlugin(total, 'Tổng')],
@@ -187,21 +181,10 @@ odoo.define('quan_ly_van_ban.document_dashboard', function (require) {
             var ctx = document.getElementById('chart_doc_status');
             if (!ctx) return;
             if (this.charts.statusChart) this.charts.statusChart.destroy();
-
+            var labels = Object.keys(data), values = Object.values(data);
             this.charts.statusChart = new Chart(ctx, {
                 type: 'bar',
-                data: {
-                    labels: Object.keys(data),
-                    datasets: [{
-                        label: 'Số văn bản',
-                        data: Object.values(data),
-                        backgroundColor: '#fb7185',
-                        borderRadius: 8,
-                        borderSkipped: false,
-                        barPercentage: 0.7,
-                        categoryPercentage: 0.75
-                    }]
-                },
+                data: { labels: labels, datasets: [{ label: 'Số văn bản', data: values, backgroundColor: '#3b82f6', borderRadius: 6 }] },
                 options: this._getBarChartOptions()
             });
         },
@@ -210,20 +193,17 @@ odoo.define('quan_ly_van_ban.document_dashboard', function (require) {
             var ctx = document.getElementById('chart_incoming_outgoing');
             if (!ctx) return;
             if (this.charts.inOutChart) this.charts.inOutChart.destroy();
-
             var values = [incoming, outgoing];
-            var total = values.reduce(function(sum, val) { return sum + val; }, 0);
-
+            var total = values.reduce((a,b) => a+b, 0);
             this.charts.inOutChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: ['Văn bản Đến', 'Văn bản Đi'],
                     datasets: [{
                         data: values,
-                        backgroundColor: ['#4BC0C0', '#f97316'],
-                        borderWidth: 0,
-                        borderRadius: 8,
-                        hoverOffset: 14
+                        backgroundColor: ['#10b981', '#f97316'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
                     }]
                 },
                 plugins: [this._getCenterTextPlugin(total, 'Tổng')],
@@ -235,7 +215,6 @@ odoo.define('quan_ly_van_ban.document_dashboard', function (require) {
             var ctx = document.getElementById('chart_ai_summary');
             if (!ctx) return;
             if (this.charts.aiChart) this.charts.aiChart.destroy();
-
             this.charts.aiChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -243,11 +222,8 @@ odoo.define('quan_ly_van_ban.document_dashboard', function (require) {
                     datasets: [{
                         label: 'Số văn bản',
                         data: [aiDocs, totalDocs - aiDocs],
-                        backgroundColor: ['#60a5fa', 'rgba(255,255,255,0.18)'],
-                        borderRadius: 8,
-                        borderSkipped: false,
-                        barPercentage: 0.7,
-                        categoryPercentage: 0.75
+                        backgroundColor: ['#3b82f6', '#e2e8f0'],
+                        borderRadius: 6
                     }]
                 },
                 options: this._getBarChartOptions()
@@ -257,17 +233,12 @@ odoo.define('quan_ly_van_ban.document_dashboard', function (require) {
         _renderApprovalGauge: function(rate, approved, total) {
             var container = this.$('#gauge_approval');
             if (!container.length) return;
-            
             container.html(`
-                <div style="text-align: center;">
-                    <div style="font-size: 48px; font-weight: bold; color: #f5576c;">
-                        ${rate.toFixed(1)}%
-                    </div>
-                    <div style="color: #666; margin-top: 10px;">
-                        ${approved} / ${total} văn bản được phê duyệt
-                    </div>
-                    <div style="margin-top: 20px; height: 8px; background: #e0e0e0; border-radius: 4px;">
-                        <div style="height: 100%; width: ${rate}%; background: linear-gradient(90deg, #f093fb, #f5576c);"></div>
+                <div style="text-align: center; width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%;">
+                    <div style="font-size: 40px; font-weight: 700; color: #0f172a;">${rate.toFixed(1)}%</div>
+                    <div style="color: #64748b; margin-top: 4px; font-size: 14px;">${approved} / ${total} văn bản phê duyệt</div>
+                    <div style="margin-top: 20px; height: 6px; width: 80%; background: #e2e8f0; border-radius: 10px; overflow: hidden;">
+                        <div style="height: 100%; width: ${rate}%; background: linear-gradient(90deg, #3b82f6, #14b8a6);"></div>
                     </div>
                 </div>
             `);
@@ -276,7 +247,6 @@ odoo.define('quan_ly_van_ban.document_dashboard', function (require) {
         _renderRecentDocuments: function(docs) {
             var container = this.$('#recent_documents');
             if (!container.length) return;
-            
             if (docs.length > 0) {
                 container.html(docs.map(function(doc) {
                     return `
@@ -284,9 +254,7 @@ odoo.define('quan_ly_van_ban.document_dashboard', function (require) {
                             <div>
                                 <div class="recent-item-name">${_.escape(doc.name)}</div>
                                 <div class="recent-item-meta">
-                                    <span>${_.escape(doc.doc_type)}</span>
-                                    <span>&middot;</span>
-                                    <span>${_.escape(doc.responsible)}</span>
+                                    <span>${_.escape(doc.doc_type)}</span> · <span>${_.escape(doc.responsible)}</span>
                                 </div>
                                 <div class="recent-item-date">${doc.created}</div>
                             </div>
@@ -307,7 +275,6 @@ odoo.define('quan_ly_van_ban.document_dashboard', function (require) {
         }
     });
     
-    core.action_registry.add('document_dashboard_action', DocumentDashboard);
-    
-    return DocumentDashboard;
+    core.action_registry.add('van_ban_dashboard_action', VanBanDashboard);
+    return VanBanDashboard;
 });

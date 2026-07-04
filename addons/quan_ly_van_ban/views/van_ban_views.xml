@@ -67,30 +67,21 @@
                         </page>
                         
                         <page string="Nội dung OCR" name="ocr_content">
-                            <!-- Hiển thị khi đã có OCR text -->
                             <div class="alert alert-success" role="alert" 
                                 attrs="{'invisible': [('ocr_status', '!=', 'completed')]}">
                                 <i class="fa fa-check-circle"/> Đã quét OCR thành công!
                             </div>
-                            
-                            <!-- Hiển thị khi đang xử lý -->
                             <div class="alert alert-warning" role="alert" 
                                 attrs="{'invisible': [('ocr_status', '!=', 'processing')]}">
                                 <i class="fa fa-spinner fa-spin"/> Đang quét OCR, vui lòng chờ...
                             </div>
-                            
-                            <!-- Hiển thị nội dung OCR -->
                             <field name="ocr_text" nolabel="1" 
                                 placeholder="Nội dung quét từ văn bản..."
                                 attrs="{'invisible': [('ocr_status', 'in', ['not_started', 'processing'])]}"/>
-                            
-                            <!-- Hiển thị thông báo chưa quét -->
                             <div class="alert alert-info" role="alert" 
                                 attrs="{'invisible': [('ocr_status', '!=', 'not_started')]}">
                                 <i class="fa fa-info-circle"/> Chưa quét OCR. Nhấn nút "Quét OCR" để bắt đầu.
                             </div>
-                            
-                            <!-- Hiển thị thông báo lỗi -->
                             <div class="alert alert-danger" role="alert" 
                                 attrs="{'invisible': [('ocr_status', '!=', 'failed')]}">
                                 <i class="fa fa-exclamation-triangle"/> Quét OCR thất bại. Vui lòng thử lại.
@@ -134,6 +125,102 @@
                     </notebook>
                 </sheet>
             </form>
+        </field>
+    </record>
+
+    <!-- ==================== KANBAN VIEW (PHÂN CỘT THEO TRẠNG THÁI) ==================== -->
+    <record id="view_van_ban_kanban" model="ir.ui.view">
+        <field name="name">van.ban.kanban</field>
+        <field name="model">van_ban.document</field>
+        <field name="arch" type="xml">
+            <kanban class="o_kanban_mobile" sample="1">
+                <field name="id"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="doc_type"/>
+                <field name="loai_van_ban_id"/>
+                <field name="customer_id"/>
+                <field name="nhan_vien_id"/>
+                <field name="date"/>
+                <field name="file"/>
+                <field name="file_name"/>
+                <field name="status"/>
+                <field name="folder_id"/>
+                
+                <!-- Nhóm cột theo trạng thái -->
+                <group>
+                    <field name="status" widget="kanban"/>
+                </group>
+
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_global_click" t-att-data-status="record.status.raw_value"
+                             style="background: #fff; margin-bottom: 12px; width: 100%; position: relative; border-radius: 8px;">
+                            
+                            <!-- Badge Sắp hạn -->
+                            <div style="position: absolute; top: 10px; right: 10px; z-index: 2;">
+                                <span class="badge badge-warning" style="border-radius: 12px; padding: 4px 8px; font-size: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                    <i class="fa fa-clock-o"/> Sắp hạn
+                                </span>
+                            </div>
+
+                            <!-- Nội dung chính thẻ -->
+                            <div style="padding: 16px 12px 0 12px; min-height: 80px;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                                    <strong style="font-size: 15px; color: #333; font-weight: 600;">
+                                        <field name="code"/>
+                                    </strong>
+                                </div>
+                                <div style="font-size: 14px; font-weight: 500; color: #212529; margin-bottom: 4px; line-height: 1.4;">
+                                    <field name="name"/>
+                                </div>
+                                <div style="font-size: 12px; color: #6c757d; margin-bottom: 8px;">
+                                    <field name="loai_van_ban_id"/>
+                                </div>
+                            </div>
+                            
+                            <!-- Chân thẻ thông tin -->
+                            <div style="padding: 0 12px 12px 12px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #6c757d; border-top: 1px solid #f1f3f5; padding-top: 10px; margin-top: 6px;">
+                                    <span>
+                                        <i class="fa fa-user-o" style="margin-right: 4px;"/> <field name="nhan_vien_id"/>
+                                    </span>
+                                    <span>
+                                        <i class="fa fa-calendar-o" style="margin-right: 4px;"/> <field name="date"/>
+                                    </span>
+                                </div>
+                                
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                                    <div t-if="record.file.raw_value" style="font-size: 12px; color: #6c757d;">
+                                        <i class="fa fa-paperclip"/> File
+                                    </div>
+                                    <div>
+                                        <span class="btn btn-xs-secondary" style="cursor: pointer;">
+                                            <i class="fa fa-eye"/> Xem
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Label trạng thái (CSS đã có sẵn) -->
+                                <div style="margin-top: 10px;">
+                                    <t t-if="record.status.raw_value == 'draft'">
+                                        <span class="badge-status-draft"><i class="fa fa-file-text-o"/> Nháp</span>
+                                    </t>
+                                    <t t-if="record.status.raw_value == 'to_approve'">
+                                        <span class="badge-status-pending"><i class="fa fa-hourglass-half"/> Chờ duyệt</span>
+                                    </t>
+                                    <t t-if="record.status.raw_value == 'approved'">
+                                        <span class="badge-status-approved"><i class="fa fa-check-circle"/> Đã duyệt</span>
+                                    </t>
+                                    <t t-if="record.status.raw_value == 'archived'">
+                                        <span class="badge-status-archived"><i class="fa fa-archive"/> Đã hủy</span>
+                                    </t>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
         </field>
     </record>
 
@@ -185,6 +272,23 @@
                 <filter name="group_by_customer" string="Khách hàng" 
                         context="{'group_by': 'customer_id'}"/>
             </search>
+        </field>
+    </record>
+    
+    <!-- ==================== ACTION (ĐÃ BỔ SUNG default_group_by="status") ==================== -->
+    <record id="action_van_ban_document" model="ir.actions.act_window">
+        <field name="name">Tất cả văn bản</field>
+        <field name="res_model">van_ban.document</field>
+        <!-- Đảm bảo Kanban đứng đầu -->
+        <field name="view_mode">kanban,tree,form</field>
+        <field name="view_id" ref="view_van_ban_kanban"/>
+        <field name="search_view_id" ref="van_ban_search"/>
+        <!-- DÒNG QUAN TRỌNG NHẤT: Ép Odoo nhóm cột ngay khi mở trang -->
+        <field name="context" eval="{'default_group_by': 'status'}"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Thêm văn bản đầu tiên vào hệ thống
+            </p>
         </field>
     </record>
 </odoo>

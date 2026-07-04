@@ -1,85 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <record id="view_appointment_form"
-                model="ir.ui.view">
+        <record id="view_appointment_form" model="ir.ui.view">
             <field name="name">qlkh.appointment.form</field>
             <field name="model">qlkh.appointment</field>
-
-            <field name="arch"
-                   type="xml">
-
+            <field name="arch" type="xml">
                 <form>
-
                     <sheet>
-
                         <group>
-
-                            <field name="name"/>
-
-                        <field name="customer_id"/>
-
-                        <field name="nhan_vien_id"/>
-
-                        <field name="appointment_date"/>
-
-                        <field name="status"
-       widget="statusbar"
-       statusbar_visible="moi,da_xac_nhan,hoan_thanh,huy"/>
-
-                        <field name="follow_up_id" readonly="1"/>
-                        <field name="related_quotation_id" readonly="1"/>
-                        <field name="note"/>
-
+                            <field name="name" placeholder="Tiêu đề cuộc hẹn..."/>
+                            <field name="customer_id" options="{'no_create': True}"/>
+                            <field name="nhan_vien_id" options="{'no_create': True}"/>
+                            <field name="appointment_date" widget="datetime"/>
+                            <field name="status" widget="statusbar" statusbar_visible="moi,da_xac_nhan,hoan_thanh,huy"/>
+                            <field name="follow_up_id" readonly="1"/>
+                            <field name="related_quotation_id" readonly="1"/>
+                            <field name="note" placeholder="Ghi chú..."/>
                         </group>
-
                     </sheet>
-
                 </form>
-
             </field>
-
         </record>
 
-        <record id="view_appointment_tree"
-                model="ir.ui.view">
-
+        <record id="view_appointment_tree" model="ir.ui.view">
             <field name="name">qlkh.appointment.tree</field>
             <field name="model">qlkh.appointment</field>
-            <field name="arch"
-                   type="xml">
-
-                <tree
-                    decoration-success="status=='hoan_thanh'"
-                    decoration-danger="status=='huy'">
-
+            <field name="arch" type="xml">
+                <tree decoration-success="status=='hoan_thanh'" decoration-danger="status=='huy'">
                     <field name="name"/>
-
                     <field name="customer_id"/>
-
                     <field name="nhan_vien_id"/>
-
-                    <field name="appointment_date"/>
-
-                    <field name="status"/>
-
+                    <field name="appointment_date" widget="datetime"/>
+                    <field name="status" widget="badge"/>
                     <field name="related_quotation_id"/>
-
                 </tree>
-
             </field>
-
         </record>
 
-        <record id="action_appointment"
-                model="ir.actions.act_window">
-
+        <record id="action_appointment" model="ir.actions.act_window">
             <field name="name">Lịch hẹn</field>
             <field name="res_model">qlkh.appointment</field>
             <field name="view_mode">tree,form</field>
-
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Tạo cuộc hẹn làm việc với khách hàng
+                </p>
+            </field>
         </record>
-
     </data>
-
 </odoo>

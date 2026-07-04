@@ -28,52 +28,50 @@
                                 <field name="phone"/>
                                 <field name="iot_device"/>
                             </group>
+                            <group>
+                                <field name="address"/>
+                            </group>
                         </group>
                         <group>
-                            <field name="address"/>
                             <field name="note"/>
                         </group>
-                        <group string="Chỉ số khách hàng">
-                            <field name="interaction_count"
-                                readonly="1"/>
-                            <field name="quotation_count"
-                                readonly="1"/>
-                            <field name="contract_count"
-                                readonly="1"/>
-                            <field name="revenue_total"
-                                readonly="1"/>
+                        <group string="Chỉ số khách hàng" colspan="2">
+                            <field name="interaction_count" readonly="1"/>
+                            <field name="quotation_count" readonly="1"/>
+                            <field name="contract_count" readonly="1"/>
+                            <field name="revenue_total" readonly="1" widget="monetary"/>
                         </group>
-                            <notebook>
-                                <page string="Sản phẩm/Dịch vụ">
-                                    <field name="product_ids">
-                                        <tree editable="bottom">
-                                            <field name="name"/>
-                                            <field name="code"/>
-                                            <field name="device_type"/>
-                                            <field name="list_price" widget="monetary"/>
-                                            <field name="active"/>
-                                        </tree>
-                                    </field>
-                                </page>
-                            </notebook>
+                        <notebook>
+                            <!-- Đã thêm attrs để ẩn tab khi chưa có sản phẩm -->
+                            <page string="Sản phẩm/Dịch vụ" attrs="{'invisible': [('product_ids', '=', False)]}">
+                                <field name="product_ids">
+                                    <tree editable="bottom">
+                                        <field name="name"/>
+                                        <field name="code"/>
+                                        <field name="device_type"/>
+                                        <field name="list_price" widget="monetary"/>
+                                        <field name="active"/>
+                                    </tree>
+                                </field>
+                            </page>
+                        </notebook>
                     </sheet>
                 </form>
             </field>
         </record>
+        
         <record id="view_customer_tree" model="ir.ui.view">
             <field name="name">qlkh.customer.tree</field>
             <field name="model">qlkh.customer</field>
             <field name="arch" type="xml">
-                <tree decoration-success="status=='thanh_cong'"
-                    decoration-danger="status=='that_bai'"
-                    decoration-warning="status=='dam_phan'">
+                <tree decoration-success="status=='thanh_cong'" decoration-danger="status=='that_bai'" decoration-warning="status=='dam_phan'">
                     <field name="name"/>
                     <field name="code"/>
                     <field name="customer_type"/>
                     <field name="status"/>
                     <field name="expected_revenue" widget="monetary"/>
                     <field name="nhan_vien_phu_trach_id"/>
-                    <field name="revenue_total"/>
+                    <field name="revenue_total" widget="monetary"/>
                 </tree>
             </field>
         </record>

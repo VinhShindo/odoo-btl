@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
+        <!-- ==================== FORM VIEW ==================== -->
         <record id="view_nhan_vien_form" model="ir.ui.view">
             <field name="name">nhan_vien.form</field>
             <field name="model">hr.employee</field>
@@ -29,6 +30,7 @@
                         </group>
                         <group col="4" string="Thông tin công việc">
                             <field name="don_vi_id"/>
+                            <field name="chuc_vu_id" options="{'no_create': True}"/>
                             <field name="company_id" options="{'no_create': True}"/>
                         </group>
                         <group col="4" string="Thông tin chi tiết">
@@ -110,11 +112,13 @@
             </field>
         </record>
 
+        <!-- ==================== TREE VIEW ==================== -->
         <record id="view_nhan_vien_tree" model="ir.ui.view">
             <field name="name">nhan_vien.tree</field>
             <field name="model">hr.employee</field>
             <field name="priority">1</field>
             <field name="arch" type="xml">
+                <!-- Đã xóa pager="true" và xóa class="o_list_view" để tránh lỗi parse -->
                 <tree>
                     <field name="ho_va_ten"/>
                     <field name="ma_dinh_danh"/>
@@ -125,6 +129,105 @@
             </field>
         </record>
 
+        <!-- ==================== KANBAN VIEW (DÙNG chuc_vu_id) ==================== -->
+        <record id="view_nhan_vien_kanban" model="ir.ui.view">
+            <field name="name">nhan_vien.kanban</field>
+            <field name="model">hr.employee</field>
+            <field name="priority">2</field>
+            <field name="arch" type="xml">
+                <kanban class="o_kanban_mobile" sample="1">
+                    <!-- Khai báo các trường cần dùng -->
+                    <field name="id"/>
+                    <field name="ho_va_ten"/>
+                    <field name="ma_dinh_danh"/>
+                    <field name="image_1920"/>
+                    <field name="don_vi_id"/>
+                    <field name="chuc_vu_id"/>
+                    <field name="work_email"/>
+                    <field name="work_phone"/>
+                    <field name="so_hop_dong"/>
+                    <field name="so_bao_gia"/>
+                    <field name="diem_kpi"/>
+                    <field name="active"/>
+
+                    <!-- Chia cột tự động dựa trên Phòng ban (don_vi_id) -->
+                    <group>
+                        <field name="don_vi_id" widget="kanban"/>
+                    </group>
+
+                    <templates>
+                        <t t-name="kanban-box">
+                            <div class="oe_kanban_global_click" style="background: #fff; border: 1px solid #f3f4f6; border-radius: 12px; margin-bottom: 12px; width: 100%; position: relative;">
+                                <div class="badge-ribbon">
+                                    <i class="fa fa-star"/> Mới
+                                </div>
+
+                                <div style="display: flex; padding: 16px 16px 0 16px; align-items: flex-start;">
+                                    <div class="o_kanban_image" style="width: 64px; height: 64px; border-radius: 50%; overflow: hidden; border: 2px solid #f1f5f9; flex-shrink: 0; margin-right: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                        <t t-if="record.image_1920.raw_value">
+                                            <img t-att-src="kanban_image('hr.employee', 'image_1920', record.id.raw_value)" 
+                                                 alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;"/>
+                                        </t>
+                                        <t t-else="">
+                                            <div style="width: 100%; height: 100%; background: linear-gradient(135deg, #e0e7ff, #c7d2fe); display: flex; align-items: center; justify-content: center; color: #4f46e5; font-weight: bold; font-size: 28px;">
+                                                <t t-esc="record.ho_va_ten.raw_value ? record.ho_va_ten.raw_value[0] : 'N'"/>
+                                            </div>
+                                        </t>
+                                    </div>
+                                    
+                                    <div style="flex: 1;">
+                                        <div style="font-size: 16px; font-weight: 600; color: #1f2937; line-height: 1.3;">
+                                            <field name="ho_va_ten"/>
+                                        </div>
+                                        <div style="font-size: 13px; color: #6b7280; margin-top: 2px;">
+                                            <field name="chuc_vu_id"/>
+                                        </div>
+                                        <div style="font-size: 12px; color: #9ca3af; margin-top: 2px;">
+                                            <i class="fa fa-envelope-o"/> <field name="work_email"/>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="border-top: 1px solid #f3f4f6; margin: 12px 16px;"></div>
+
+                                <div style="display: flex; justify-content: space-between; padding: 0 16px 12px 16px; font-size: 12px; text-align: center;">
+                                    <div class="stat-badge" style="flex: 1; border-right: 1px solid #f3f4f6;">
+                                        <div class="value" style="font-weight: 700; color: #1f2937;"><field name="so_hop_dong"/></div>
+                                        <div class="label" style="color: #9ca3af; text-transform: uppercase; font-size: 10px;">Hợp đồng</div>
+                                    </div>
+                                    <div class="stat-badge" style="flex: 1; border-right: 1px solid #f3f4f6;">
+                                        <div class="value" style="font-weight: 700; color: #1f2937;"><field name="so_bao_gia"/></div>
+                                        <div class="label" style="color: #9ca3af; text-transform: uppercase; font-size: 10px;">Báo giá</div>
+                                    </div>
+                                    <div class="stat-badge" style="flex: 1;">
+                                        <div class="value" style="font-weight: 700; color: #1f2937;">
+                                            <field name="diem_kpi"/>%
+                                        </div>
+                                        <div class="label" style="color: #9ca3af; text-transform: uppercase; font-size: 10px;">KPI</div>
+                                    </div>
+                                </div>
+
+                                <div style="padding: 8px 16px; border-top: 1px solid #f3f4f6; background: #fafafa; border-radius: 0 0 12px 12px;">
+                                    <t t-if="record.active.raw_value == true">
+                                        <span class="status-badge-active" style="display: inline-flex; align-items: center; padding: 2px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">
+                                            <span class="status-dot dot-active" style="width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px;"></span> Đang làm việc
+                                        </span>
+                                    </t>
+                                    <t t-else="">
+                                        <span class="status-badge-inactive" style="display: inline-flex; align-items: center; padding: 2px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">
+                                            <span class="status-dot dot-inactive" style="width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px;"></span> Đã nghỉ
+                                        </span>
+                                    </t>
+                                </div>
+
+                            </div>
+                        </t>
+                    </templates>
+                </kanban>
+            </field>
+        </record>
+
+        <!-- ==================== SEARCH VIEW ==================== -->
         <record model="ir.ui.view" id="nhan_vien_search">
             <field name="model">hr.employee</field>
             <field name="arch" type="xml">
@@ -140,14 +243,15 @@
             </field>
         </record>
 
+        <!-- ==================== ACTION ==================== -->
         <record id="action_nhan_vien" model="ir.actions.act_window">
             <field name="name">Nhân viên</field>
             <field name="res_model">hr.employee</field>
-            <field name="view_mode">tree,form</field>
-            <field name="views" eval="[(ref('view_nhan_vien_tree'), 'tree'), (ref('view_nhan_vien_form'), 'form')]"/>
+            <field name="view_mode">kanban,tree,form</field>
+            <field name="view_id" ref="view_nhan_vien_kanban"/>
             <field name="search_view_id" ref="nhan_vien_search"/>
-            <field name="view_id" ref="view_nhan_vien_tree" />
+            <!-- Đã thêm limit="20" để mỗi trang hiện 20 nhân viên và bật thanh phân trang -->
+            <field name="limit">20</field>
         </record>
     </data>
 </odoo>
-

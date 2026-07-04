@@ -20,18 +20,24 @@
         'views/danh_sach_chung_chi_bang_cap.xml',
         'views/ho_so_dien_tu.xml',
         'views/iot_project_assignment.xml',
-        'views/dashboard.xml',  # Dashboard action và template
+        'views/dashboard.xml',  # Dashboard action
         'views/menu.xml',       # Menu
         'views/dashboard_templates.xml',
     ],
+    'models': [
+        'models/nhan_su_dashboard_helper.py',  # Thêm dòng này
+    ],
+    'controllers': [
+        'controllers/hr_dashboard.py',         # Thêm dòng này
+    ],
     'qweb': [
-        'static/src/xml/dashboard.xml',  # ĐỔI ĐƯỜNG DẪN - template nên để trong static
+        'static/src/xml/dashboard.xml',  
     ],
     'assets': {
         'web.assets_backend': [
             'nhan_su/static/src/css/hr_dashboard.css',
-            'nhan_su/static/src/js/hr_dashboard.js',
-            'nhan_su/static/src/xml/dashboard.xml',  # THÊM TEMPLATE VÀO ASSETS
+            'nhan_su/static/src/js/nhan_su_dashboard.js',  # Đã đổi tên file JS
+            'nhan_su/static/src/xml/dashboard.xml',  
         ],
         'web.assets_qweb': [
             'nhan_su/static/src/xml/dashboard.xml',

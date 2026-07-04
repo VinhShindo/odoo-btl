@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Client Action cho Dashboard -->
+    <!-- Client Action cho Dashboard - Đã đổi tag để gọi đúng JS mới -->
     <record id="action_document_dashboard_client" model="ir.actions.client">
         <field name="name">Dashboard Quản lý Văn bản</field>
-        <field name="tag">document_dashboard_action</field>
+        <field name="tag">van_ban_dashboard_action</field>
         <field name="target">main</field>
     </record>
-</odoo>
+</odoo> 

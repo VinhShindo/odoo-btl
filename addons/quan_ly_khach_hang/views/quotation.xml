@@ -69,12 +69,12 @@
                             <page string="Chi tiết sản phẩm">
                                 <field name="line_ids" context="{'default_quotation_id': active_id}">
                                     <tree editable="bottom" decoration-info="quantity > 10">
-                                        <field name="product_name" placeholder="Tên sản phẩm..."/>
+                                        <field name="product_name" placeholder="Tên sản phẩm (tự động)" readonly="1"/>
                                         <field name="description" placeholder="Mô tả..."/>
                                         <field name="quantity" sum="Tổng số lượng"/>
                                         <field name="unit_price" widget="monetary"/>
                                         <field name="vat_rate" widget="percentage"/>
-                                        <field name="product_id"/>
+                                        <field name="product_id" placeholder="Chọn sản phẩm IoT..."/>
                                         <field name="price_subtotal" widget="monetary" sum="Tổng thành tiền"/>
                                         <field name="price_tax" widget="monetary" sum="Tổng VAT"/>
                                         <field name="price_total" widget="monetary" sum="Tổng cộng"/>
