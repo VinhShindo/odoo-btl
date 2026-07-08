@@ -53,7 +53,6 @@ package.json
 /venv_15_01/
 
 
-insert_data.sql
 check_data_integrity.sql
 
 addons/smart_biz_services/config.json
