@@ -30,9 +30,7 @@ Platform ERP là hệ thống quản trị nguồn lực doanh nghiệp được
 Hệ thống được thiết kế để giải quyết các bài toán quản trị nội bộ và tương tác khách hàng cho các doanh nghiệp vừa và nhỏ, đặc biệt trong lĩnh vực công nghệ và IoT. Platform ERP không chỉ là một hệ thống quản lý truyền thống mà còn tích hợp các công nghệ trí tuệ nhân tạo (AI) hiện đại để tự động hóa các quy trình xử lý văn bản, tài liệu và nâng cao hiệu quả vận hành.
 
 <div align="center" style="margin-top: 15px; margin-bottom: 15px;">
-    <a href="docs/posters/ERP_Poster.pdf" target="_blank" style="display: inline-block; padding: 10px 20px; background-color: #f0f0f0; border-radius: 6px; text-decoration: none; color: #333; font-weight: bold; border: 1px solid #ccc;">
-        📄 Xem Poster thuyết trình dự án
-    </a>
+    <img src="docs/business-flow/Poster.png" alt="Poster thuyết trình dự án" style="max-width: 100%; height: auto; border-radius: 6px; border: 1px solid #ccc;">
 </div>
 
 ### 1.2. Mục tiêu
