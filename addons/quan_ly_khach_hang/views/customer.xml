@@ -10,9 +10,9 @@
                         <group>
                             <group>
                                 <field name="name"/>
-                                <field name="code"/>
+                                <field name="code" invisible="1"/>
                                 <field name="customer_type"/>
-                                <field name="status" widget="statusbar" statusbar_visible="tiem_nang,da_xac_thuc,dang_tu_van,da_gui_bao_gia,dam_phan,sap_ky_hd,thanh_cong,that_bai"/>
+                                <field name="status"/>
                             </group>
                             <group>
                                 <field name="area"/>
@@ -26,7 +26,6 @@
                             <group>
                                 <field name="email"/>
                                 <field name="phone"/>
-                                <field name="iot_device"/>
                             </group>
                             <group>
                                 <field name="address"/>
@@ -42,7 +41,6 @@
                             <field name="revenue_total" readonly="1" widget="monetary"/>
                         </group>
                         <notebook>
-                            <!-- Đã thêm attrs để ẩn tab khi chưa có sản phẩm -->
                             <page string="Sản phẩm/Dịch vụ" attrs="{'invisible': [('product_ids', '=', False)]}">
                                 <field name="product_ids">
                                     <tree editable="bottom">

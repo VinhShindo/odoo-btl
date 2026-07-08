@@ -55,10 +55,20 @@
         <field name="name">Thư mục văn bản</field>
         <field name="res_model">van_ban.folder</field>
         <field name="view_mode">kanban,tree,form</field>
+        <field name="view_id" ref="view_van_ban_folder_kanban"/>
         <field name="search_view_id" ref="van_ban_folder_search"/>
+        <field name="context" eval="{'search_default_group_by_kanban_group': 1, 'default_group_by': 'kanban_group'}"/>
+        <!-- Show only employee and common/document folders in this Kanban (hide administrative department nodes) -->
+        <field name="domain">[('folder_type','in', ['employee','document_type','general','customer'])]</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Tạo thư mục để tổ chức văn bản
+            </p>
+            <p>
+                Danh sách tự động nhóm theo 3 cột: Nhân viên, Phòng ban và Chung.
+            </p>
+            <p>
+                Phiên bản hiển thị rút gọn chỉ còn số lượng văn bản và số thư mục con.
             </p>
         </field>
     </record>

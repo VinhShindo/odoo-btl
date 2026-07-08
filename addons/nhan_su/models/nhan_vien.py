@@ -118,12 +118,46 @@ class NhanVien(models.Model):
                 f"Văn bản xử lý: {record.so_van_ban_xu_ly}."
             )
 
+    @api.model
+    def default_get(self, fields_list):
+        """Đảm bảo name luôn có giá trị khi form khởi tạo"""
+        res = super().default_get(fields_list)
+        # Nếu chưa có name, tạo từ ho_ten_dem và ten
+        if 'name' not in fields_list or not res.get('name'):
+            ho_ten_dem = res.get('ho_ten_dem', '')
+            ten = res.get('ten', '')
+            if ho_ten_dem and ten:
+                res['name'] = f"{ho_ten_dem} {ten}"
+            elif ten:
+                res['name'] = ten
+            else:
+                res['name'] = "Nhân viên mới"
+        return res
+
     @api.model_create_multi
     def create(self, vals_list):
+        # In log để kiểm tra (bạn có thể xem trong terminal)
+        _logger.info("vals_list trước khi create: %s", vals_list)
+
+        for vals in vals_list:
+            if not vals.get('name'):
+                ho_ten_dem = vals.get('ho_ten_dem', '')
+                ten = vals.get('ten', '')
+                if ho_ten_dem and ten:
+                    vals['name'] = f"{ho_ten_dem} {ten}"
+                elif ten:
+                    vals['name'] = ten
+                else:
+                    vals['name'] = "Nhân viên mới"
+
         records = super().create(vals_list)
+
+        for rec in records:
+            _logger.info("Nhân viên tạo thành công: ID=%s, Name=%s", rec.id, rec.name)
+
+        # Phần tạo thư mục và gửi thông báo giữ nguyên
         for record in records:
             record._create_employee_folder()
-            # Call external helper to optionally generate more structured folders
             try:
                 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../../addons'))
                 from smart_biz_services.agent_helper import AgentHelper
@@ -132,18 +166,15 @@ class NhanVien(models.Model):
                 agent = AgentHelper()
                 notif = NotifHelper()
 
-                # Get suggested subfolders from service (could be static or AI-driven)
                 suggested = []
                 try:
                     suggested = agent.generate_employee_folder_structure(record.ho_va_ten or record.name or f'Nhân viên {record.id}')
                 except Exception:
                     suggested = []
 
-                # Create suggested subfolders under the employee folder
                 if suggested and record.folder_id:
                     for name in suggested:
                         try:
-                            # avoid duplicates
                             exists = self.env['van_ban.folder'].search([
                                 ('name', '=', name),
                                 ('parent_id', '=', record.folder_id.id)
@@ -157,55 +188,54 @@ class NhanVien(models.Model):
                         except Exception:
                             _logger.exception('Không tạo được thư mục phụ: %s', name)
 
-                # Notify HR via Telegram (non-blocking)
                 try:
-                    title = f"Hồ sơ nhân viên mới: {record.ho_va_ten or record.name}"
-                    content = (
-                        f"Nhân viên mới đã được tạo.\nTên: {record.ho_va_ten or record.name}\n"
-                        f"Phòng ban: {record.don_vi_id.ten_don_vi if record.don_vi_id else 'Chưa có'}\n"
-                        f"Chức vụ: {record.job_id.name if hasattr(record, 'job_id') and record.job_id else 'Chưa có'}"
-                    )
-                    # Gửi Telegram
                     notif.send_telegram_template(
                         'employee_created',
                         employee_name=record.ho_va_ten or record.name,
                         department=record.don_vi_id.ten_don_vi if record.don_vi_id else 'Chưa phân công',
-                        job_title=record.job_id.name if hasattr(record, 'job_id') and record.job_id else 'Chưa phân công'
+                        job_title=record.chuc_vu_id.ten_chuc_vu if record.chuc_vu_id else 'Chưa phân công'
                     )
-
-                    # Gửi Email cho nhân viên
                     if record.work_email:
                         notif.send_email_template(
-                            'employee_created',  # Cần thêm template này
+                            'employee_created',
                             to_email=record.work_email,
                             recipient_name=record.name,
                             employee_name=record.ho_va_ten or record.name,
-                            department=record.don_vi_id.ten_don_vi if record.don_vi_id else 'Chưa phân  công',
-                            job_title=record.job_id.name if hasattr(record, 'job_id') and record.job_id else 'Chưa phân công'
+                            department=record.don_vi_id.ten_don_vi if record.don_vi_id else 'Chưa phân công',
+                            job_title=record.chuc_vu_id.ten_chuc_vu if record.chuc_vu_id else 'Chưa phân công'
                         )
                 except Exception as e:
                     _logger.error('Không thể gửi thông báo tạo nhân viên: %s', e, exc_info=True)
             except Exception:
                 _logger.exception('Lỗi khi gọi service tạo cấu trúc thư mục nhân viên')
+
         return records
 
     def write(self, vals):
-        # Passive trigger: detect change of don_vi_id or job_id
+        # Theo dõi các trường thay đổi để kích hoạt thông báo
         employees = self
-        old_values = {rec.id: (bool(rec.don_vi_id and rec.don_vi_id.id), bool(getattr(rec, 'job_id', False) and rec.job_id.id)) for rec in employees}
+        old_values = {
+            rec.id: {
+                'don_vi_id': rec.don_vi_id.id if rec.don_vi_id else False,
+                'chuc_vu_id': rec.chuc_vu_id.id if rec.chuc_vu_id else False,
+                'job_id': rec.job_id.id if rec.job_id else False,
+            }
+            for rec in employees
+        }
 
         result = super().write(vals)
 
-        # Only proceed if relevant fields appear in vals
-        if not any(k in vals for k in ('don_vi_id', 'job_id')):
+        # Chỉ tiếp tục nếu có thay đổi ở don_vi_id hoặc chuc_vu_id
+        if not any(k in vals for k in ('don_vi_id', 'chuc_vu_id')):
             return result
 
         for rec in self:
-            old_dv, old_job = old_values.get(rec.id, (False, False))
-            new_dv = bool(rec.don_vi_id and rec.don_vi_id.id)
-            new_job = bool(getattr(rec, 'job_id', False) and rec.job_id.id)
+            old_dv = old_values.get(rec.id, {}).get('don_vi_id')
+            old_cv = old_values.get(rec.id, {}).get('chuc_vu_id')
+            new_dv = rec.don_vi_id.id if rec.don_vi_id else False
+            new_cv = rec.chuc_vu_id.id if rec.chuc_vu_id else False
 
-            if old_dv == new_dv and old_job == new_job:
+            if old_dv == new_dv and old_cv == new_cv:
                 continue
 
             try:
@@ -216,17 +246,23 @@ class NhanVien(models.Model):
 
                 employee_name = rec.ho_va_ten or rec.name or f'Nhân viên {rec.id}'
                 dept = rec.don_vi_id.ten_don_vi if rec.don_vi_id else 'Chưa có'
-                job = rec.job_id.name if getattr(rec, 'job_id', False) and rec.job_id else 'Chưa có'
-                manager = rec.parent_id.name if getattr(rec, 'parent_id', False) and rec.parent_id else 'Chưa có'
+                job = rec.chuc_vu_id.ten_chuc_vu if rec.chuc_vu_id else 'Chưa có'
+                manager = rec.parent_id.name if rec.parent_id else 'Chưa có'
 
                 try:
-                    notif.send_telegram_template(
+                    telegram_success = notif.send_telegram_template(
                         'employee_updated',
                         employee_name=employee_name,
                         department=dept,
                         job_title=job,
                         manager=manager
                     )
+                    
+                    if telegram_success:
+                        _logger.info(f"📤 Telegram updated sent for {employee_name}")
+                    else:
+                        _logger.warning(f"📤 Telegram updated failed for {employee_name} (template missing or error)")
+                        
                 except Exception:
                     _logger.exception('Gửi telegram thất bại cho nhân viên %s', employee_name)
 
@@ -241,6 +277,7 @@ class NhanVien(models.Model):
                             job_title=job,
                             manager=manager
                         )
+                        _logger.info(f"📧 Email updated sent to {rec.work_email}")
                 except Exception:
                     _logger.exception('Gửi email thất bại cho nhân viên %s', employee_name)
 

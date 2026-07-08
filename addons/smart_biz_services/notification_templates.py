@@ -1,5 +1,8 @@
 # models/notification_templates.py
 from datetime import datetime
+import pytz
+
+tz = pytz.timezone('Asia/Ho_Chi_Minh')
 
 class NotificationTemplates:
     """Template chuẩn cho email và telegram"""
@@ -7,7 +10,7 @@ class NotificationTemplates:
     # Cấu hình công ty (cần điều chỉnh theo thực tế)
     COMPANY_NAME = "Công ty Cổ phần Công nghệ SmartBiz"
     COMPANY_LOGO_URL = "https://your-domain.com/logo.png"  # Thay bằng URL thật
-    COMPANY_PHONE = "024.1234.5678"
+    COMPANY_PHONE = "024.1207.2055"
     COMPANY_EMAIL = "contact@smartbiz.vn"
     COMPANY_WEBSITE = "https://smartbiz.vn"
     COMPANY_ADDRESS = "Tầng 12, Tòa nhà VTC, Số 23 Lê Trọng Tấn, Hà Nội"
@@ -45,147 +48,209 @@ class NotificationTemplates:
 
 
 class TelegramTemplates:
-    """Template tin nhắn Telegram - Ngắn gọn, súc tích"""
-    
+    """Template tin nhắn Telegram - Hình thức chuyên nghiệp, nội dung rõ ràng"""
+
     @staticmethod
-    def customer_created(customer_name, customer_type, industry, address, 
+    def customer_created(customer_name, customer_type, industry, address,
                          ai_score, ai_reason, employee_name):
-        return f"""🏢 **SMARTBIZ - KHÁCH HÀNG MỚI**
+        return f"""📌 **THÔNG TIN KHÁCH HÀNG MỚI**
 ━━━━━━━━━━━━━━━━━━━━━━━
 
-📋 **Thông tin khách hàng**
-• Họ tên: {customer_name}
-• Loại hình: {customer_type}
-• Ngành nghề: {industry}
-• Địa chỉ: {address}
+👤 **Khách hàng**: {customer_name}
+🏷️ **Loại hình**: {customer_type}
+🏭 **Ngành nghề**: {industry}
+📍 **Địa chỉ**: {address}
 
-🎯 **Đánh giá AI**
-• Điểm tiềm năng: {ai_score}/100
+🎯 **Đánh giá tiềm năng**
+• Điểm AI: {ai_score}/100
 • Nhận định: {ai_reason}
 
-👤 **Phụ trách**: {employee_name}
+👨‍💼 **Nhân viên phụ trách**: {employee_name}
 
-⏰ {datetime.now().strftime('%H:%M %d/%m/%Y')}
+⏰ {datetime.now(tz).strftime('%H:%M %d/%m/%Y')}
 ━━━━━━━━━━━━━━━━━━━━━━━
-_SmartBiz - Giải pháp chuyển đổi số toàn diện_"""
+_SmartBiz - Giải pháp chuyển đổi số chất lượng_"""
 
     @staticmethod
-    def customer_status_updated(customer_name, old_status, new_status, 
+    def customer_status_updated(customer_name, old_status, new_status,
                                 employee_name, next_step):
         return f"""🔄 **CẬP NHẬT TRẠNG THÁI KHÁCH HÀNG**
 ━━━━━━━━━━━━━━━━━━━━━━━
 
 👤 **Khách hàng**: {customer_name}
-📊 **Trạng thái**: {new_status}
+📊 **Trạng thái hiện tại**: {new_status}
 👨‍💼 **Phụ trách**: {employee_name}
 
-📌 **Công việc tiếp theo**:
+📌 **Hành động tiếp theo**:
 {next_step}
 
-⏰ {datetime.now().strftime('%H:%M %d/%m/%Y')}
+⏰ {datetime.now(tz).strftime('%H:%M %d/%m/%Y')}
 ━━━━━━━━━━━━━━━━━━━━━━━
-_SmartBiz - Đồng hành cùng thành công của bạn_"""
+_SmartBiz - Đồng hành cùng sự phát triển của quý khách_"""
 
     @staticmethod
-    def contract_approved(contract_name, customer_name, contract_value, 
+    def contract_approved(contract_name, customer_name, contract_value,
                           start_date, end_date, summary):
         # Format số tiền
         value_str = f"{contract_value:,.0f}".replace(',', '.')
-        return f"""📄 **HỢP ĐỒNG ĐƯỢC PHÊ DUYỆT**
+        summary_text = summary[:200] + '...' if len(summary) > 200 else summary
+        return f"""📄 **HỢP ĐỒNG ĐÃ PHÊ DUYỆT**
 ━━━━━━━━━━━━━━━━━━━━━━━
 
-📑 **Số HĐ**: {contract_name}
+📑 **Số hợp đồng**: {contract_name}
 👤 **Khách hàng**: {customer_name}
 💰 **Giá trị**: {value_str} VNĐ
 
-📅 **Hiệu lực**: {start_date} → {end_date}
+📅 **Thời hạn**: {start_date} → {end_date}
 
-📝 **Tóm tắt**:
-{summary[:200] + '...' if len(summary) > 200 else summary}
+📝 **Nội dung chính**:
+{summary_text}
 
-⏰ {datetime.now().strftime('%H:%M %d/%m/%Y')}
+⏰ {datetime.now(tz).strftime('%H:%M %d/%m/%Y')}
 ━━━━━━━━━━━━━━━━━━━━━━━
-_SmartBiz - Chuyển đổi số thành công_"""
+_SmartBiz - Triển khai kế hoạch thành công_"""
 
     @staticmethod
-    def document_approved(doc_name, doc_type, customer_name, summary):
-        return f"""📁 **VĂN BẢN ĐƯỢC PHÊ DUYỆT**
+    def document_approved(doc_name, doc_type, customer_name, summary, full_text=None):
+        display_text = summary
+        if not display_text and full_text:
+            display_text = full_text[:400] + ('...' if len(full_text) > 400 else '')
+        return f"""📁 **VĂN BẢN ĐÃ ĐƯỢC DUYỆT**
 ━━━━━━━━━━━━━━━━━━━━━━━
 
 📄 **Tiêu đề**: {doc_name}
 🏷️ **Loại**: {doc_type}
 👤 **Khách hàng**: {customer_name or 'N/A'}
 
-📝 **Tóm tắt**:
-{summary[:200] + '...' if len(summary) > 200 else summary}
+📝 **Tóm tắt nội dung**:
+{display_text or 'Không có tóm tắt'}
 
-⏰ {datetime.now().strftime('%H:%M %d/%m/%Y')}
+⏰ {datetime.now(tz).strftime('%H:%M %d/%m/%Y')}
 ━━━━━━━━━━━━━━━━━━━━━━━
-_SmartBiz - Quản lý văn bản thông minh_"""
+_SmartBiz - Quản lý tài liệu chuyên nghiệp_"""
 
     @staticmethod
     def employee_created(employee_name, department, job_title):
-        return f"""👥 **NHÂN VIÊN MỚI**
+        return f"""👥 **NHÂN SỰ MỚI**
 ━━━━━━━━━━━━━━━━━━━━━━━
 
-👤 **Họ tên**: {employee_name}
+👤 **Họ và tên**: {employee_name}
 🏢 **Phòng ban**: {department}
-📌 **Chức vụ**: {job_title}
+📌 **Chức danh**: {job_title}
 
-📝 Hồ sơ nhân sự đã được tạo trong hệ thống.
+📝 Hồ sơ nhân sự đã được tạo và lưu trữ trong hệ thống.
 
-⏰ {datetime.now().strftime('%H:%M %d/%m/%Y')}
+⏰ {datetime.now(tz).strftime('%H:%M %d/%m/%Y')}
 ━━━━━━━━━━━━━━━━━━━━━━━
 _SmartBiz - Quản trị nhân sự hiệu quả_"""
 
     @staticmethod
+    def employee_updated(employee_name, department, job_title, manager):
+        return f"""🔄 **CẬP NHẬT NHÂN SỰ**
+━━━━━━━━━━━━━━━━━━━━━━━
+
+👤 **Họ và tên**: {employee_name}
+🏢 **Phòng ban**: {department}
+📌 **Chức danh**: {job_title}
+👨‍💼 **Quản lý trực tiếp**: {manager}
+
+📝 Thông tin nhân sự đã được cập nhật chính xác trong hệ thống.
+
+⏰ {datetime.now(tz).strftime('%H:%M %d/%m/%Y')}
+━━━━━━━━━━━━━━━━━━━━━━━
+_SmartBiz - Quản lý nhân sự chuyên nghiệp_"""
+    
+    @staticmethod
     def quotation_negotiation(quotation_name, customer_name, meeting_link):
-        return f"""🤝 **ĐÀM PHÁN BÁO GIÁ**
+        return f"""🤝 **LỜI MỜI ĐÀM PHÁN BÁO GIÁ**
 ━━━━━━━━━━━━━━━━━━━━━━━
 
 📄 **Báo giá**: {quotation_name}
 👤 **Khách hàng**: {customer_name}
 
-🔗 **Link Google Meet**:
+🔗 **Link họp trực tuyến**:
 {meeting_link}
 
-📌 Vui lòng tham gia đúng giờ để trao đổi chi tiết.
+📌 Vui lòng tham gia đúng giờ và chuẩn bị tài liệu liên quan.
 
-⏰ {datetime.now().strftime('%H:%M %d/%m/%Y')}
+⏰ {datetime.now(tz).strftime('%H:%M %d/%m/%Y')}
 ━━━━━━━━━━━━━━━━━━━━━━━
-_SmartBiz - Giải pháp tối ưu cho doanh nghiệp_"""
-    
+_SmartBiz - Tư vấn chuyên nghiệp cho doanh nghiệp_"""
+
+    @staticmethod
+    def quotation_sent(quotation_name, customer_name, meeting_link, quotation_value, quotation_date, line_items=None):
+        def format_money(value):
+            return f"{value:,.0f}".replace(',', '.') if value is not None else '0'
+
+        message = [
+            '📩 *BÁO GIÁ ĐÃ GỬI*',
+            '━━━━━━━━━━━━━━━━━━━━━━━',
+            f'📄 *Báo giá*: {quotation_name}',
+            f'👤 *Khách hàng*: {customer_name}',
+            f'💰 *Tổng giá trị*: {format_money(quotation_value)} VNĐ',
+            f'🗓️ *Ngày phát hành*: {quotation_date}',
+            f'🔗 *Link họp*: {meeting_link}',
+            '━━━━━━━━━━━━━━━━━━━━━━━',
+            '*📦 Chi tiết báo giá*',
+        ]
+
+        if line_items:
+            for item in line_items:
+                product_name = item.get('product_name', '')
+                description = item.get('description', '')
+                quantity = item.get('quantity', 0)
+                unit_price = format_money(item.get('unit_price', 0))
+                total_price = format_money(item.get('price_total', 0))
+                message.extend([
+                    f'• {product_name}',
+                    f'  - Mô tả: {description}',
+                    f'  - Số lượng: {quantity}',
+                    f'  - Đơn giá: {unit_price} VNĐ',
+                    f'  - Thành tiền: {total_price} VNĐ',
+                ])
+        else:
+            message.append('Không có sản phẩm trong báo giá')
+
+        message.extend([
+            '━━━━━━━━━━━━━━━━━━━━━━━',
+            f'*Tổng cộng*: {format_money(quotation_value)} VNĐ',
+            '📌 Vui lòng kiểm tra kỹ nội dung và phản hồi sớm.',
+        ])
+        return '\n'.join(message)
+
     @staticmethod
     def customer_reassigned(customer_name, old_employee, new_employee, reason, confidence):
         return f"""🔄 **THAY ĐỔI NGƯỜI PHỤ TRÁCH**
-    ━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━
 
-    👤 **Khách hàng**: {customer_name}
-    👋 **Cũ**: {old_employee}
-    ✨ **Mới**: {new_employee}
+👤 **Khách hàng**: {customer_name}
+👥 **Người phụ trách trước đó**: {old_employee}
+👔 **Người phụ trách mới**: {new_employee}
 
-    📊 **Độ tin cậy**: {int(confidence * 100)}%
-    📝 **Lý do**: {reason[:200]}
+📌 **Lý do thay đổi**: {reason[:200]}
+📊 **Mức độ tin cậy**: {int(confidence * 100)}%
 
-    ⏰ {datetime.now().strftime('%H:%M %d/%m/%Y')}
-    ━━━━━━━━━━━━━━━━━━━━━━━
-    _SmartBiz - Phân công thông minh_"""
+⏰ {datetime.now(tz).strftime('%H:%M %d/%m/%Y')}
+━━━━━━━━━━━━━━━━━━━━━━━
+_SmartBiz - Phân công nhân sự chính xác_"""
 
     @staticmethod
     def meeting_created(customer_name, meeting_link, reason, meeting_title):
-        return f"""📅 **LỊCH HỌP ĐƯỢC TẠO**
-    ━━━━━━━━━━━━━━━━━━━━━━━
+        return f"""📅 **LỊCH HỌP MỚI**
+━━━━━━━━━━━━━━━━━━━━━━━
 
-    👤 **Khách hàng**: {customer_name}
-    📌 **Tiêu đề**: {meeting_title}
-    📝 **Lý do**: {reason}
+👤 **Khách hàng**: {customer_name}
+📌 **Tiêu đề**: {meeting_title}
+📝 **Mục đích**: {reason}
 
-    🔗 **Link tham gia**:
-    {meeting_link}
+🔗 **Link tham gia**:
+{meeting_link}
 
-    ⏰ {datetime.now().strftime('%H:%M %d/%m/%Y')}
-    ━━━━━━━━━━━━━━━━━━━━━━━
-    _SmartBiz - Tự động tạo lịch họp thông minh_"""
+📌 Vui lòng kiểm tra kết nối và tham gia đúng giờ để cuộc họp diễn ra hiệu quả.
+
+⏰ {datetime.now(tz).strftime('%H:%M %d/%m/%Y')}
+━━━━━━━━━━━━━━━━━━━━━━━
+_SmartBiz - Kết nối giao tiếp chuyên nghiệp_"""
 
 
 class EmailTemplates:
@@ -335,7 +400,7 @@ class EmailTemplates:
         </div>
         
         <div class="footer">
-            <p>&copy; {datetime.now().year} {NotificationTemplates.COMPANY_NAME}. Tất cả các quyền được bảo lưu.</p>
+            <p>&copy; {datetime.now(tz).year} {NotificationTemplates.COMPANY_NAME}. Tất cả các quyền được bảo lưu.</p>
             <p>{NotificationTemplates.COMPANY_ADDRESS}</p>
             <p style="margin-top: 12px;">
                 <a href="#">Chính sách bảo mật</a> | <a href="#">Điều khoản sử dụng</a>
@@ -514,6 +579,85 @@ class EmailTemplates:
         return EmailTemplates._get_base_html(content_body, f'Lời mời đàm phán - Báo giá {quotation_name}', recipient_name)
 
     @staticmethod
+    def quotation_sent(quotation_name, customer_name, meeting_link, quotation_value, quotation_date, line_items=None, recipient_name=None):
+        def format_money(value):
+            return f"{value:,.0f}".replace(',', '.') if value is not None else '0'
+
+        table_rows = ''
+        if line_items:
+            for item in line_items:
+                quantity = item.get('quantity', 0)
+                quantity_str = f"{quantity:.2f}" if isinstance(quantity, float) else str(quantity)
+                table_rows += f"""
+                    <tr>
+                        <td>{item.get('product_name', '')}</td>
+                        <td>{item.get('description', '')}</td>
+                        <td style='text-align: right;'>{quantity_str}</td>
+                        <td style='text-align: right;'>{format_money(item.get('unit_price', 0))} VNĐ</td>
+                        <td style='text-align: right;'>{format_money(item.get('price_total', 0))} VNĐ</td>
+                    </tr>
+                """
+        else:
+            table_rows = """
+                <tr>
+                    <td colspan='5' style='text-align: center;'>Không có sản phẩm trong báo giá</td>
+                </tr>
+            """
+
+        content_body = f"""
+            <div class="info-box">
+                <strong>📩 BÁO GIÁ ĐÃ ĐƯỢC GỬI</strong>
+            </div>
+            
+            <div class="info-row">
+                <div class="info-label">Báo giá số:</div>
+                <div class="info-value">{quotation_name}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Khách hàng:</div>
+                <div class="info-value">{customer_name}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Giá trị:</div>
+                <div class="info-value">{format_money(quotation_value)} VNĐ</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Ngày báo giá:</div>
+                <div class="info-value">{quotation_date}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Link họp:</div>
+                <div class="info-value">{meeting_link}</div>
+            </div>
+            
+            <div style="margin-top: 18px;">
+                <strong>📦 Chi tiết sản phẩm</strong>
+            </div>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                <thead>
+                    <tr>
+                        <th style="border-bottom: 1px solid #ddd; padding: 8px; text-align: left;">Sản phẩm</th>
+                        <th style="border-bottom: 1px solid #ddd; padding: 8px; text-align: left;">Mô tả</th>
+                        <th style="border-bottom: 1px solid #ddd; padding: 8px; text-align: right;">Số lượng</th>
+                        <th style="border-bottom: 1px solid #ddd; padding: 8px; text-align: right;">Đơn giá</th>
+                        <th style="border-bottom: 1px solid #ddd; padding: 8px; text-align: right;">Thành tiền</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {table_rows}
+                </tbody>
+            </table>
+            <div style="margin-top: 16px; padding: 16px; background: #e8f4f8; border-radius: 8px;">
+                <strong>💡 Tổng cộng:</strong> {format_money(quotation_value)} VNĐ
+            </div>
+            <div style="margin-top: 20px; padding: 16px; background: #e8f4f8; border-radius: 8px;">
+                <strong>💡 Lưu ý:</strong><br>
+                Vui lòng kiểm tra báo giá và phản hồi sớm để tiếp tục xử lý.
+            </div>
+        """
+        return EmailTemplates._get_base_html(content_body, f'Báo giá đã gửi - {quotation_name}', recipient_name)
+
+    @staticmethod
     def employee_created(employee_name, department, job_title, recipient_name=None):
         """Template email thông báo nhân viên mới được tạo"""
         content_body = f"""
@@ -585,8 +729,12 @@ class EmailTemplates:
         )
 
     @staticmethod
-    def document_approved(doc_name, doc_type, customer_name, summary, recipient_name=None):
+    def document_approved(doc_name, doc_type, customer_name, summary, full_text=None, recipient_name=None):
         """Template email thông báo văn bản được phê duyệt"""
+        display_text = summary or full_text or 'Không có tóm tắt'
+        if not summary and full_text:
+            display_text = f"<em>(Không có tóm tắt tự động, hiển thị nội dung OCR)</em><br><br>{full_text}"
+
         content_body = f"""
             <div class="info-box">
                 <strong>📄 VĂN BẢN ĐÃ ĐƯỢC PHÊ DUYỆT</strong>
@@ -607,7 +755,7 @@ class EmailTemplates:
             
             <div class="info-box" style="background: #f0f4f8;">
                 <strong>📝 TÓM TẮT NỘI DUNG</strong><br>
-                {summary}
+                {display_text}
             </div>
             
             <div style="text-align: center; margin-top: 20px;">
@@ -728,7 +876,7 @@ class EmailTemplates:
             </div>
             
             <div class="footer">
-                <p>&copy; {datetime.now().year} {NotificationTemplates.COMPANY_NAME}</p>
+                <p>&copy; {datetime.now(tz).year} {NotificationTemplates.COMPANY_NAME}</p>
                 <p>Hotline: {NotificationTemplates.COMPANY_PHONE} | Email: {NotificationTemplates.COMPANY_EMAIL}</p>
             </div>
         </div>

@@ -47,12 +47,12 @@
                                 <field name="date_start"/>
                                 <field name="date_end"/>
                                 <field name="status" widget="statusbar" statusbar_visible="nhap,cho_duyet,da_duyet,hieu_luc"/>
-                                <field name="document_count" readonly="1"/>
                             </group>
                         </group>
                         <group>
                             <group>
-                                <field name="iot_device" placeholder="Thiết bị IoT liên quan..."/>
+                                <field name="iot_device" placeholder="Chọn thiết bị IoT từ báo giá..." domain="[('id', 'in', available_iot_device_ids)]" options="{'no_create': True}"/>
+                                <field name="available_iot_device_ids" invisible="1"/>
                                 <field name="file" filename="file_name"/>
                                 <field name="file_name" invisible="1"/>
                             </group>

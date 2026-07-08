@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
+        <!-- FORM VIEW -->
         <record id="view_customer_interaction_form" model="ir.ui.view">
             <field name="name">qlkh.customer_interaction.form</field>
             <field name="model">qlkh.customer_interaction</field>
@@ -8,35 +9,86 @@
                 <form>
                     <sheet>
                         <group>
-                            <field name="customer_id"/>
-                            <field name="date"/>
-                                    <field name="status"/>
+                            <field name="customer_id" options="{'no_create': True}"/>
+                            <field name="date" widget="datetime"/>
                             <field name="type"/>
+                            <field name="status"/>
+                            <field name="nhan_vien_id" options="{'no_create': True}"/>
                             <field name="content"/>
-                            <field name="nhan_vien_id"/>
                             <field name="note"/>
                         </group>
                     </sheet>
                 </form>
             </field>
         </record>
+
+        <!-- TREE VIEW -->
         <record id="view_customer_interaction_tree" model="ir.ui.view">
             <field name="name">qlkh.customer_interaction.tree</field>
             <field name="model">qlkh.customer_interaction</field>
             <field name="arch" type="xml">
                 <tree>
                     <field name="customer_id"/>
-                    <field name="date"/>
+                    <field name="date" widget="datetime"/>
                     <field name="type"/>
-                    <field name="status"/>
+                    <field name="status" widget="badge"/>
                     <field name="nhan_vien_id"/>
                 </tree>
             </field>
         </record>
+
+        <!-- 👉 BẮT ĐẦU THÊM SEARCH VIEW -->
+        <record model="ir.ui.view" id="view_customer_interaction_search">
+            <field name="name">qlkh.customer_interaction.search</field>
+            <field name="model">qlkh.customer_interaction</field>
+            <field name="arch" type="xml">
+                <search>
+                    <!-- Các trường cho phép tìm kiếm -->
+                    <field name="customer_id"/>
+                    <field name="content"/>
+                    <field name="nhan_vien_id"/>
+                    <field name="type"/>
+                    <field name="status"/>
+
+                    <!-- Bộ lọc nhanh -->
+                    <filter name="filter_moi" string="Mới" domain="[('status','=','moi')]"/>
+                    <filter name="filter_da_thuc_hien" string="Đã thực hiện" domain="[('status','=','da_thuc_hien')]"/>
+                    <filter name="filter_huy" string="Hủy" domain="[('status','=','huy')]"/>
+                    
+                    <!-- Lọc theo loại tương tác -->
+                    <filter name="filter_goi_dien" string="Gọi điện" domain="[('type','=','goi_dien')]"/>
+                    <filter name="filter_gap_mat" string="Gặp mặt" domain="[('type','=','gap_mat')]"/>
+                    <filter name="filter_email" string="Email" domain="[('type','=','email')]"/>
+
+                    <separator/>
+
+                    <!-- Nhóm theo các trường -->
+                    <group expand="0" string="Nhóm theo">
+                        <filter name="group_by_customer" string="Khách hàng" context="{'group_by':'customer_id'}"/>
+                        <filter name="group_by_type" string="Loại tương tác" context="{'group_by':'type'}"/>
+                        <filter name="group_by_status" string="Trạng thái" context="{'group_by':'status'}"/>
+                        <filter name="group_by_nhan_vien" string="Nhân viên" context="{'group_by':'nhan_vien_id'}"/>
+                        <filter name="group_by_date" string="Ngày" context="{'group_by':'date:day'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+        <!-- 👉 KẾT THÚC THÊM SEARCH VIEW -->
+
+        <!-- ACTION (đã cập nhật search_view_id) -->
         <record id="action_customer_interaction" model="ir.actions.act_window">
             <field name="name">Lịch sử tương tác</field>
             <field name="res_model">qlkh.customer_interaction</field>
             <field name="view_mode">tree,form</field>
+            <field name="search_view_id" ref="view_customer_interaction_search"/>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Tạo tương tác mới với khách hàng
+                </p>
+                <p>
+                    Ghi lại mọi cuộc gọi, email, gặp mặt để theo dõi lịch sử chăm sóc khách hàng.
+                </p>
+            </field>
         </record>
     </data>
 </odoo>

@@ -30,7 +30,14 @@ class Contract(models.Model):
     ],
     string='Trạng thái',
     default='nhap')
-    iot_device = fields.Char('Thiết bị IoT bảo trì')
+    iot_device = fields.Many2one(
+        'qlkh.contract_product',
+        string='Thiết bị IoT bảo trì'
+    )
+    available_iot_device_ids = fields.Many2many(
+        'qlkh.contract_product',
+        compute='_compute_available_iot_device_ids'
+    )
     file = fields.Binary('File hợp đồng')
     file_name = fields.Char('Tên file hợp đồng')
     note = fields.Text('Ghi chú')
@@ -52,6 +59,20 @@ class Contract(models.Model):
             rec.document_count = self.env['van_ban.document'].search_count([
                 ('related_contract_id', '=', rec.id)
             ])
+
+    @api.depends('quotation_id.line_ids.product_id')
+    def _compute_available_iot_device_ids(self):
+        for rec in self:
+            if rec.quotation_id:
+                rec.available_iot_device_ids = rec.quotation_id.line_ids.mapped('product_id').ids
+            else:
+                rec.available_iot_device_ids = False
+
+    @api.onchange('quotation_id')
+    def _onchange_quotation_id(self):
+        for rec in self:
+            if rec.quotation_id and rec.iot_device and rec.iot_device not in rec.quotation_id.line_ids.mapped('product_id'):
+                rec.iot_device = False
 
     def check_expiry(self):
         # Cảnh báo hợp đồng sắp hết hạn
@@ -139,6 +160,12 @@ class Contract(models.Model):
         if contract.customer_id and contract.status == 'nhap':
             contract._create_contract_meeting('new_contract')
         # ========== KẾT THÚC TRIGGER 5 ==========
+
+        # Tự động tạo/đồng bộ document khi hợp đồng được tạo
+        try:
+            contract._create_linked_document_for_contract(contract)
+        except Exception:
+            _logger.exception('Không thể tạo document liên kết cho hợp đồng %s khi tạo', contract.id)
         
         return contract
 
@@ -147,15 +174,58 @@ class Contract(models.Model):
         try:
             doc = self.env['van_ban.document'].search([('related_contract_id', '=', contract.id)], limit=1)
             if not doc:
-                doc = self.env['van_ban.document'].create({
+                metadata = self.env['van_ban.document']._get_default_document_metadata(
+                    customer=contract.customer_id,
+                    employee=contract.customer_id.nhan_vien_phu_trach_id if contract.customer_id else False,
+                    doc_type='hop_dong'
+                )
+                status_mapping = {
+                    'nhap': 'draft',
+                    'cho_duyet': 'to_approve',
+                    'da_duyet': 'approved',
+                    'hieu_luc': 'approved',
+                    'sap_het_han': 'approved',
+                    'het_han': 'archived'
+                }
+                document_status = status_mapping.get(contract.status, 'draft')
+                doc_vals = {
                     'name': f'Hợp đồng {contract.name}',
                     'doc_type': 'hop_dong',
                     'customer_id': contract.customer_id.id if contract.customer_id else False,
                     'related_contract_id': contract.id,
                     'source_module': 'crm',
-                    'status': 'draft'
-                })
-            # ensure outgoing record
+                    'status': document_status,
+                }
+                if contract.file:
+                    doc_vals.update({
+                        'file': contract.file,
+                        'file_name': contract.file_name,
+                        'date_upload': fields.Datetime.now(),
+                    })
+                doc_vals.update(metadata)
+                doc = self.env['van_ban.document'].create(doc_vals)
+            else:
+                update_vals = {}
+                if doc.doc_type != 'hop_dong':
+                    update_vals['doc_type'] = 'hop_dong'
+                expected_name = f'Hợp đồng {contract.name}'
+                if doc.name != expected_name:
+                    update_vals['name'] = expected_name
+                customer_id = contract.customer_id.id if contract.customer_id else False
+                if (doc.customer_id.id if doc.customer_id else False) != customer_id:
+                    update_vals['customer_id'] = customer_id
+                if not doc.related_contract_id:
+                    update_vals['related_contract_id'] = contract.id
+                metadata = self.env['van_ban.document']._get_default_document_metadata(
+                    customer=contract.customer_id,
+                    employee=contract.customer_id.nhan_vien_phu_trach_id if contract.customer_id else False,
+                    doc_type='hop_dong'
+                )
+                for key, value in metadata.items():
+                    if value and not doc[key]:
+                        update_vals[key] = value
+                if update_vals:
+                    doc.write(update_vals)
             if not self.env['van_ban_di'].search([('document_id', '=', doc.id)], limit=1):
                 try:
                     self.env['van_ban_di'].create({
@@ -165,6 +235,7 @@ class Contract(models.Model):
                         'ten_van_ban': doc.name,
                         'customer_id': contract.customer_id.id if contract.customer_id else False,
                         'nhan_vien_tao_id': contract.customer_id.nhan_vien_phu_trach_id.id if contract.customer_id and contract.customer_id.nhan_vien_phu_trach_id else False,
+                        'loai_van_ban_id': doc.loai_van_ban_id.id if doc.loai_van_ban_id else self.env['van_ban.document']._lookup_loai_van_ban('hop_dong'),
                         'trang_thai': 'draft'
                     })
                 except Exception:
@@ -176,10 +247,70 @@ class Contract(models.Model):
         old_status = {rec.id: rec.status for rec in self}
         result = super().write(vals)
 
-        if 'status' in vals:
-            for rec in self:
+        for rec in self:
+            try:
+                self._create_linked_document_for_contract(rec)
+                doc = self.env['van_ban.document'].search([('related_contract_id', '=', rec.id)], limit=1)
+                if doc:
+                    metadata = self.env['van_ban.document']._get_default_document_metadata(
+                        customer=rec.customer_id,
+                        employee=rec.customer_id.nhan_vien_phu_trach_id if rec.customer_id else False,
+                        doc_type='hop_dong'
+                    )
+                    update_vals = {}
+                    expected_name = f'Hợp đồng {rec.name}'
+                    if doc.name != expected_name:
+                        update_vals['name'] = expected_name
+                    if doc.doc_type != 'hop_dong':
+                        update_vals['doc_type'] = 'hop_dong'
+                    customer_id = rec.customer_id.id if rec.customer_id else False
+                    if (doc.customer_id.id if doc.customer_id else False) != customer_id:
+                        update_vals['customer_id'] = customer_id
+                    if not doc.related_contract_id:
+                        update_vals['related_contract_id'] = rec.id
+                    for key, value in metadata.items():
+                        if value and not doc[key]:
+                            update_vals[key] = value
+                    if update_vals:
+                        doc.write(update_vals)
+            except Exception:
+                _logger.exception('Không thể đồng bộ metadata document cho hợp đồng %s', rec.id)
+
+            if 'file' in vals or 'file_name' in vals:
                 try:
-                    # ensure document exists
+                    self._create_linked_document_for_contract(rec)
+                    doc = self.env['van_ban.document'].search([('related_contract_id', '=', rec.id)], limit=1)
+                    if not doc:
+                        continue
+                    if rec.file and (not doc.file or doc.file != rec.file or doc.file_name != rec.file_name):
+                        if doc.file:
+                            try:
+                                current_ver = doc.current_version or 'v1'
+                                try:
+                                    ver_num = int(current_ver.lstrip('v').strip())
+                                except Exception:
+                                    ver_num = 1
+                                new_ver_no = f'v{ver_num + 1}'
+                                self.env['van_ban.version'].create({
+                                    'document_id': doc.id,
+                                    'version_no': current_ver,
+                                    'file': doc.file,
+                                    'file_name': doc.file_name,
+                                    'note': f'Phiên bản lưu tự động trước khi cập nhật từ hợp đồng {rec.name}'
+                                })
+                                doc.current_version = new_ver_no
+                            except Exception:
+                                _logger.exception('Không thể tạo phiên bản cho document %s trước khi ghi đè file', doc.id)
+                        doc.write({
+                            'file': rec.file,
+                            'file_name': rec.file_name,
+                            'date_upload': fields.Datetime.now(),
+                        })
+                except Exception:
+                    _logger.exception('Không thể đồng bộ file hợp đồng lên document cho hợp đồng %s', rec.id)
+
+            if 'status' in vals:
+                try:
                     self._create_linked_document_for_contract(rec)
                     doc = self.env['van_ban.document'].search([('related_contract_id', '=', rec.id)], limit=1)
                     if doc:
@@ -195,14 +326,14 @@ class Contract(models.Model):
                         doc.write({'status': new_doc_status})
                         if rec.status == 'da_duyet':
                             try:
-                                    self.env['van_ban.approval'].create({
-                                        'document_id': doc.id,
-                                        'approver_id': rec.approved_by.id if hasattr(rec, 'approved_by') and rec.approved_by else False,
-                                        'approver_user_id': self.env.uid,
-                                        'status': 'approved',
-                                        'comment': 'Auto-created from contract approval',
-                                        'level': 1
-                                    })
+                                self.env['van_ban.approval'].create({
+                                    'document_id': doc.id,
+                                    'approver_id': rec.approved_by.id if hasattr(rec, 'approved_by') and rec.approved_by else False,
+                                    'approver_user_id': self.env.uid,
+                                    'status': 'approved',
+                                    'comment': 'Auto-created from contract approval',
+                                    'level': 1
+                                })
                             except Exception:
                                 _logger.exception('Không thể tạo lịch sử phê duyệt cho document %s', doc.id)
                 except Exception:
@@ -333,30 +464,37 @@ class Contract(models.Model):
 
             rec.status = 'da_duyet'
 
-            document_exist = self.env[
-                'van_ban.document'
-            ].search([
+            document = self.env['van_ban.document'].search([
                 ('related_contract_id', '=', rec.id)
             ], limit=1)
 
-            if not document_exist:
-                document = self.env[
-                    'van_ban.document'
-                ].create({
+            if not document:
+                document = self.env['van_ban.document'].create({
                     'name': f'Hồ sơ hợp đồng {rec.name}',
                     'doc_type': 'hop_dong',
                     'customer_id': rec.customer_id.id,
                     'related_contract_id': rec.id,
-                    'status': 'draft',
+                    'status': 'approved',
                     'file': rec.file,
                     'file_name': rec.file_name,
                 })
+            else:
+                try:
+                    if document.status != 'approved':
+                        document.write({'status': 'approved'})
+                except Exception:
+                    _logger.exception('Không thể cập nhật trạng thái document hợp đồng %s', document.id)
 
-                if document.file:
+            if document and document.file:
+                try:
+                    ocr_done = getattr(document, 'ocr_status', None) == 'completed'
+                except Exception:
+                    ocr_done = False
+                if not ocr_done:
                     try:
                         document.action_scan_ocr()
                     except Exception:
-                        pass
+                        _logger.exception('OCR failed for document %s', document.id)
 
             try:
                 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../../addons'))
@@ -367,9 +505,15 @@ class Contract(models.Model):
                 notif = NotifHelper()
 
                 summary = ''
-                if rec.file:
+                text_to_summarize = rec.name
+                if document and document.ocr_text:
+                    text_to_summarize = document.ocr_text
+                elif rec.file_name:
+                    text_to_summarize = rec.name
+
+                if text_to_summarize:
                     try:
-                        summary = ai.summarize_document(rec.file_name or 'Nội dung hợp đồng', max_length=200)
+                        summary = ai.summarize_document(text_to_summarize, max_length=200)
                     except Exception as e:
                         _logger.warning('Summarize contract failed: %s', e)
                         summary = f'Hợp đồng: {rec.name}'

@@ -7,12 +7,14 @@
             <field name="arch" type="xml">
                 <form>
                     <sheet>
-                        <div class="oe_read_only" style="font-size:25px">Danh sách chứng chỉ, bằng cấp</div>
-                        <group col="4" string="Thông tin chung">
-                            <field name="nhan_vien_id"/>
-                            <field name="ma_dinh_danh"/>
-                            <field name="chung_chi_bang_cap_id"/>
-                            <field name="ghi_chu"/>
+                        <div class="oe_read_only" style="font-size:20px; font-weight:bold;">Thêm chứng chỉ</div>
+                        <group col="4" string="Thông tin">
+                            <!-- Ẩn nhan_vien_id và ma_dinh_danh vì đã được tự động điền từ context -->
+                            <field name="nhan_vien_id" invisible="1"/>
+                            <field name="ma_dinh_danh" invisible="1"/>
+                            <!-- Đưa trường chọn chứng chỉ lên đầu, bắt buộc chọn -->
+                            <field name="chung_chi_bang_cap_id" required="1" placeholder="Chọn chứng chỉ..."/>
+                            <field name="ghi_chu" placeholder="Ghi chú (nếu có)"/>
                         </group>
                     </sheet>
                 </form>
@@ -48,9 +50,7 @@
             <field name="name">Danh sách chứng chỉ bằng cấp</field>
             <field name="res_model">danh_sach_chung_chi_bang_cap</field>
             <field name="view_mode">tree,form</field>
-            <field name="search_view_id" ref = "danh_sach_chung_chi_bang_cap_search"/>
+            <field name="search_view_id" ref="danh_sach_chung_chi_bang_cap_search"/>
         </record>
     </data>
 </odoo>
-        
-    

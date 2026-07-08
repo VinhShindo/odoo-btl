@@ -7,6 +7,7 @@
         <field name="arch" type="xml">
             <tree string="Thư mục văn bản" default_order="parent_left">
                 <field name="name" string="Tên thư mục"/>
+                <field name="folder_type" string="Loại thư mục"/>
                 <field name="complete_name" string="Đường dẫn đầy đủ"/>
                 <field name="document_count" string="Số văn bản" sum="Tổng"/>
                 <field name="parent_id" string="Thư mục cha"/>
@@ -14,40 +15,41 @@
         </field>
     </record>
 
-    <!-- KANBAN VIEW -->
+    <!-- KANBAN VIEW (Đã bổ sung thẻ group để chia cột theo kanban_group) -->
     <record id="view_van_ban_folder_kanban" model="ir.ui.view">
         <field name="name">van_ban.folder.kanban</field>
         <field name="model">van_ban.folder</field>
         <field name="arch" type="xml">
             <kanban class="o_kanban_mobile">
                 <field name="name"/>
-                <field name="complete_name"/>
+                <field name="kanban_group"/>
                 <field name="document_count"/>
-                <field name="parent_id"/>
                 <field name="child_ids"/>
+                
+                <!-- CHIA CỘT DỰA TRÊN TRƯỜNG kanban_group -->
+                <group>
+                    <field name="kanban_group"/>
+                </group>
+                
                 <templates>
                     <t t-name="kanban-box">
-                        <div class="oe_kanban_global_click">
-                            <div class="o_kanban_image">
-                                <i class="fa fa-folder-open-o" style="font-size: 48px; color: #7c7bad;"/>
+                        <div class="oe_kanban_global_click" style="padding: 16px; border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); background: #fff;">
+                            <div class="o_kanban_image" style="margin-bottom: 10px; text-align: center;">
+                                <i class="fa fa-folder-open-o" style="font-size: 48px; color: #5067a7;"/>
                             </div>
                             <div class="oe_kanban_details">
-                                <strong class="o_kanban_record_title">
+                                <strong class="o_kanban_record_title" style="font-size: 15px; display: block; margin-bottom: 6px;">
                                     <field name="name"/>
                                 </strong>
-                                <div class="text-muted mt-1">
-                                    <small>
-                                        <i class="fa fa-file-text-o"/> 
-                                        <t t-esc="record.document_count.value or 0"/> văn bản
-                                        <t t-if="record.child_ids.value.length">
-                                             | <i class="fa fa-folder-o"/> 
-                                            <t t-esc="record.child_ids.value.length"/> thư mục con
-                                        </t>
-                                    </small>
+                                <div style="font-size: 12px; color: #6b7280; margin-bottom: 6px;">
+                                    <field name="folder_group"/>
                                 </div>
-                                <div t-if="record.complete_name.value != record.name.value" 
-                                     class="text-muted mt-1">
-                                    <small><i class="fa fa-sitemap"/> <field name="complete_name"/></small>
+                                <div style="font-size: 12px; color: #6b7280; margin-bottom: 6px;">
+                                    <i class="fa fa-file-text-o"/> <t t-esc="record.document_count.value or 0"/> văn bản
+                                    <t t-if="record.child_ids.value.length"> | <i class="fa fa-folder-o"/> <t t-esc="record.child_ids.value.length"/> thư mục con</t>
+                                </div>
+                                <div t-if="record.complete_name.value != record.name.value" style="font-size: 11px; color: #9ca3af;">
+                                    <i class="fa fa-sitemap"/> <field name="complete_name"/>
                                 </div>
                             </div>
                         </div>
@@ -81,6 +83,7 @@
                                    options="{'no_create': True, 'no_open': True}" 
                                    placeholder="Chọn thư mục cha"
                                    context="{'default_parent_id': parent_id}"/>
+                            <field name="folder_type"/>
                             <field name="document_count" readonly="1"/>
                         </group>
                     </group>
@@ -97,14 +100,11 @@
                                     <field name="date" string="Ngày" width="100"/>
                                 </tree>
                                 <form string="Xem văn bản">
-
-                                <field name="id" invisible="1"/>
-                                <field name="file_name" invisible="1"/>
-                                <field name="file_type" invisible="1"/>
-                                <field name="total_pages" invisible="1"/>
-                                <field name="preview_html" invisible="1"/>
-
-
+                                    <field name="id" invisible="1"/>
+                                    <field name="file_name" invisible="1"/>
+                                    <field name="file_type" invisible="1"/>
+                                    <field name="total_pages" invisible="1"/>
+                                    <field name="preview_html" invisible="1"/>
                                     <sheet>
                                         <div class="oe_title">
                                             <h2>
@@ -176,17 +176,21 @@
                 <filter string="Thư mục gốc" name="root" domain="[('parent_id','=',False)]"/>
                 <separator/>
                 <filter name="group_by_parent" string="Nhóm theo thư mục cha" 
-                        context="{'group_by': 'parent_id'}"/>
+                    context="{'group_by': 'parent_id'}"/>
+                <filter name="group_by_kanban_group" string="Nhóm theo cột" 
+                    context="{'group_by': 'kanban_group'}"/>
             </search>
         </field>
     </record>
 
-    <!-- ACTION -->
+    <!-- ACTION (Đã thêm bộ lọc mặc định search_default_root = 1) -->
     <record id="action_van_ban_folder" model="ir.actions.act_window">
         <field name="name">Thư mục văn bản</field>
         <field name="res_model">van_ban.folder</field>
         <field name="view_mode">tree,kanban,form</field>
         <field name="search_view_id" ref="van_ban_folder_search"/>
+        <!-- Context mặc định lọc ra các thư mục gốc (parent_id=False) -->
+        <field name="context">{'search_default_root': 1}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 <i class="fa fa-folder-open-o" style="font-size: 48px; color: #7c7bad;"/>

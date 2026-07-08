@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
+        <!-- FORM VIEW -->
         <record id="view_ho_so_dien_tu_form" model="ir.ui.view">
             <field name="name">ho_so_dien_tu.form</field>
             <field name="model">nhan_su.ho_so_dien_tu</field>
@@ -16,16 +17,17 @@
                             <field name="ngay_dang_tai"/>
                         </group>
                         <group>
-                            <field name="tep_dinh_kem" filename="ten_file"/>
+                            <field name="tep_dinh_kem" filename="ten_file" widget="binary" placeholder="Chọn file để tải lên..."/>
                         </group>
                         <group>
-                            <field name="note"/>
+                            <field name="note" placeholder="Ghi chú..."/>
                         </group>
                     </sheet>
                 </form>
             </field>
         </record>
 
+        <!-- TREE VIEW -->
         <record id="view_ho_so_dien_tu_tree" model="ir.ui.view">
             <field name="name">ho_so_dien_tu.tree</field>
             <field name="model">nhan_su.ho_so_dien_tu</field>
@@ -40,6 +42,42 @@
             </field>
         </record>
 
+        <!-- KANBAN VIEW -->
+        <record id="view_ho_so_dien_tu_kanban" model="ir.ui.view">
+            <field name="name">ho_so_dien_tu.kanban</field>
+            <field name="model">nhan_su.ho_so_dien_tu</field>
+            <field name="arch" type="xml">
+                <kanban class="o_kanban_mobile">
+                    <field name="id"/>
+                    <field name="ho_so"/>
+                    <field name="nhan_vien_id"/>
+                    <field name="loai_ho_so"/>
+                    <field name="ten_file"/>
+                    <field name="ngay_dang_tai"/>
+                    <templates>
+                        <t t-name="kanban-box">
+                            <div class="oe_kanban_global_click">
+                                <div class="oe_kanban_details">
+                                    <strong><field name="ho_so"/></strong>
+                                    <div><i class="fa fa-user"/> <field name="nhan_vien_id"/></div>
+                                    <div>
+                                        <span class="badge badge-info"><field name="loai_ho_so"/></span>
+                                    </div>
+                                    <div class="text-muted">
+                                        <i class="fa fa-file"/> <field name="ten_file"/>
+                                    </div>
+                                    <div class="text-muted">
+                                        <i class="fa fa-calendar"/> <field name="ngay_dang_tai"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </t>
+                    </templates>
+                </kanban>
+            </field>
+        </record>
+
+        <!-- SEARCH VIEW -->
         <record model="ir.ui.view" id="ho_so_dien_tu_search">
             <field name="model">nhan_su.ho_so_dien_tu</field>
             <field name="arch" type="xml">
@@ -48,14 +86,24 @@
                     <field name="nhan_vien_id"/>
                     <field name="loai_ho_so"/>
                     <field name="ngay_dang_tai"/>
+                    <filter name="filter_cv" string="CV" domain="[('loai_ho_so','=','cv')]"/>
+                    <filter name="filter_bang_cap" string="Bằng cấp" domain="[('loai_ho_so','=','bang_cap')]"/>
+                    <filter name="filter_hop_dong" string="Hợp đồng lao động" domain="[('loai_ho_so','=','hop_dong_lao_dong')]"/>
+                    <separator/>
+                    <filter name="filter_recent" string="30 ngày gần đây" domain="[('ngay_dang_tai','>=', context_today - 30)]"/>
+                    <group expand="0" string="Nhóm theo">
+                        <filter name="group_by_nhan_vien" string="Nhân viên" context="{'group_by':'nhan_vien_id'}"/>
+                        <filter name="group_by_loai_ho_so" string="Loại hồ sơ" context="{'group_by':'loai_ho_so'}"/>
+                    </group>
                 </search>
             </field>
         </record>
 
+        <!-- ACTION -->
         <record id="action_ho_so_dien_tu" model="ir.actions.act_window">
             <field name="name">Hồ sơ điện tử</field>
             <field name="res_model">nhan_su.ho_so_dien_tu</field>
-            <field name="view_mode">tree,form</field>
+            <field name="view_mode">kanban,tree,form</field>
             <field name="search_view_id" ref="ho_so_dien_tu_search"/>
         </record>
     </data>

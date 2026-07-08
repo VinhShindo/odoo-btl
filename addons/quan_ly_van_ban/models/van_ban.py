@@ -118,6 +118,12 @@ class VanBan(models.Model):
         string='Văn bản đi'
     )
 
+    routing_ids = fields.One2many(
+        'van_ban.routing',
+        'document_id',
+        string='Luồng xử lý'
+    )
+
     is_locked = fields.Boolean(
         string='Khóa chỉnh sửa',
         default=False
@@ -181,7 +187,64 @@ class VanBan(models.Model):
     def create(self, vals):
         if vals.get('code', _('New')) == _('New'):
             vals['code'] = self.env['ir.sequence'].next_by_code('van_ban.document') or _('New')
-        return super(VanBan, self).create(vals)
+        document = super(VanBan, self).create(vals)
+        try:
+            document._ensure_initial_routing()
+        except Exception:
+            _logger.exception('Không thể tạo luồng xử lý văn bản cho document %s', document.id)
+
+        if document.status == 'approved':
+            try:
+                super(VanBan, document).write({
+                    'approved_date': fields.Datetime.now(),
+                    'is_locked': True,
+                    'approved_by': document.approved_by.id if document.approved_by else False,
+                })
+            except Exception:
+                _logger.exception('Không thể cập nhật thông tin duyệt cho document %s', document.id)
+            try:
+                if not document.approval_ids.filtered(lambda a: a.status == 'approved'):
+                    self.env['van_ban.approval'].create({
+                        'document_id': document.id,
+                        'approver_id': document.approved_by.id if document.approved_by else False,
+                        'approver_user_id': self.env.uid,
+                        'status': 'approved',
+                        'comment': 'Tạo tự động khi document được tạo ở trạng thái approved',
+                        'level': 1,
+                    })
+            except Exception:
+                _logger.exception('Không thể tạo lịch sử phê duyệt cho document %s khi create', document.id)
+            try:
+                document._on_document_approved()
+            except Exception:
+                _logger.exception('Không thể thực thi _on_document_approved cho document %s khi create', document.id)
+        return document
+    
+    def _ensure_initial_routing(self):
+        self.ensure_one()
+        if self.routing_ids:
+            return
+        assigned_to = self.nhan_vien_id.id if self.nhan_vien_id else False
+        if not assigned_to and self.customer_id and getattr(self.customer_id, 'nhan_vien_phu_trach_id', False):
+            assigned_to = self.customer_id.nhan_vien_phu_trach_id.id
+        self.env['van_ban.routing'].create({
+            'name': f'Quy trình xử lý văn bản {self.name}',
+            'document_id': self.id,
+            'assigned_to': assigned_to,
+            'stage': 'to_process',
+            'note': 'Tự động tạo luồng xử lý khi khởi tạo văn bản.',
+        })
+
+    def _update_routing_stage_from_status(self, status):
+        self.ensure_one()
+        if not self.routing_ids:
+            self._ensure_initial_routing()
+        if status == 'to_approve':
+            self.routing_ids.write({'stage': 'to_process'})
+        elif status == 'approved':
+            self.routing_ids.write({'stage': 'done'})
+        elif status == 'archived':
+            self.routing_ids.write({'stage': 'done'})
     
     def write(self, vals):
         # Store old status before write
@@ -204,10 +267,36 @@ class VanBan(models.Model):
 
         result = super().write(vals)
 
-        # NEW: Handle document approval - summarize and notify
+        if 'status' in vals:
+            for rec in self:
+                try:
+                    rec._update_routing_stage_from_status(vals['status'])
+                except Exception:
+                    _logger.exception('Không thể đồng bộ routing cho document %s khi đổi status', rec.id)
+
+        # NEW: Handle document approval - summarize, notify, and create approval record
         if 'status' in vals and vals['status'] == 'approved':
             for rec in self:
                 if old_status.get(rec.id) != 'approved':
+                    try:
+                        rec.write({
+                            'approved_date': fields.Datetime.now(),
+                            'is_locked': True,
+                        })
+                    except Exception:
+                        _logger.exception('Không thể cập nhật ngày duyệt cho document %s', rec.id)
+                    try:
+                        if not rec.approval_ids.filtered(lambda a: a.status == 'approved'):
+                            self.env['van_ban.approval'].create({
+                                'document_id': rec.id,
+                                'approver_id': rec.approved_by.id if rec.approved_by else False,
+                                'approver_user_id': self.env.uid,
+                                'status': 'approved',
+                                'comment': 'Phê duyệt tự động khi chuyển trạng thái sang approved',
+                                'level': 1,
+                            })
+                    except Exception:
+                        _logger.exception('Không thể tạo lịch sử phê duyệt cho document %s', rec.id)
                     try:
                         rec._on_document_approved()
                     except Exception as e:
@@ -233,7 +322,9 @@ class VanBan(models.Model):
                     summary = ai.summarize_document(self.ocr_text, max_length=200)
                 except Exception as e:
                     _logger.warning('Summarize document failed: %s', e)
-                    summary = self.name
+
+            if not summary and self.ocr_text:
+                summary = self.ocr_text
 
             self.ai_summary = summary
             self.ai_processed_at = fields.Datetime.now()
@@ -253,7 +344,8 @@ class VanBan(models.Model):
                     doc_name=self.name,
                     doc_type=doc_type_label,
                     customer_name=self.customer_id.name if self.customer_id else None,
-                    summary=summary or self.ai_summary or 'Văn bản đã được phê duyệt.'
+                    summary=summary or self.ai_summary or 'Văn bản đã được phê duyệt.',
+                    full_text=self.ocr_text
                 )
             except Exception as e:
                 _logger.error('Gửi Telegram cho văn bản thất bại: %s', e, exc_info=True)
@@ -328,7 +420,72 @@ class VanBan(models.Model):
                     record.preview_url = f'/web/content/van_ban.document/{record.id}/file/{record.file_name}?download=false'
             else:
                 record.preview_url = False
-    
+
+    @api.model
+    def _lookup_loai_van_ban(self, doc_type):
+        if not doc_type:
+            return False
+        mapping = {
+            'bao_gia': ['BÁO GIÁ', 'BAO GIA', 'BG'],
+            'hop_dong': ['HỢP ĐỒNG', 'HOP DONG', 'HD'],
+            'phu_luc': ['PHỤ LỤC', 'PHU LUC', 'PL'],
+            'phap_ly': ['PHÁP LÝ', 'PHAP LY'],
+            'khac': ['KHÁC', 'KHAC'],
+        }
+        candidates = mapping.get(doc_type, [doc_type])
+        for candidate in candidates:
+            loai = self.env['loai_van_ban'].search([
+                '|',
+                ('ma_loai_van_ban', 'ilike', candidate),
+                ('ten_loai_van_ban', 'ilike', candidate)
+            ], limit=1)
+            if loai:
+                return loai.id
+        return False
+
+    @api.model
+    def _get_default_document_metadata(self, customer=None, employee=None, doc_type=None):
+        result = {}
+        if not employee and customer:
+            employee = getattr(customer, 'nhan_vien_phu_trach_id', False)
+        if employee:
+            result['nhan_vien_id'] = employee.id
+            if employee.folder_id:
+                result['folder_id'] = employee.folder_id.id
+            else:
+                try:
+                    employee._create_employee_folder()
+                    if employee.folder_id:
+                        result['folder_id'] = employee.folder_id.id
+                except Exception:
+                    _logger.exception('Không thể tạo folder nhân viên cho document: %s', employee.id)
+        if customer and not result.get('folder_id'):
+            customer_root = self.env['van_ban.folder'].search([
+                ('name', '=', 'Khách hàng'),
+                ('parent_id', '=', False)
+            ], limit=1)
+            if customer_root:
+                folder = self.env['van_ban.folder'].search([
+                    ('parent_id', '=', customer_root.id),
+                    ('name', '=', customer.name)
+                ], limit=1)
+                if not folder:
+                    try:
+                        folder = self.env['van_ban.folder'].create({
+                            'name': customer.name,
+                            'parent_id': customer_root.id,
+                            'folder_type': 'customer'
+                        })
+                    except Exception:
+                        folder = False
+                if folder:
+                    result['folder_id'] = folder.id
+        if doc_type and not result.get('loai_van_ban_id'):
+            loai_id = self._lookup_loai_van_ban(doc_type)
+            if loai_id:
+                result['loai_van_ban_id'] = loai_id
+        return result
+
     def action_scan_ocr(self):
         """Quét OCR cho file (hỗ trợ PDF và ảnh)"""
         self.ensure_one()
@@ -371,6 +528,66 @@ class VanBan(models.Model):
                 'ocr_date': fields.Datetime.now(),
                 'ocr_status': 'completed'
             })
+
+            # Sau khi OCR hoàn tất, gọi AI để tóm tắt và gửi thông báo
+            try:
+                sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../../addons'))
+                from smart_biz_services.ai_helper import AIHelper
+                from smart_biz_services.notif_helper import NotifHelper
+
+                ai = AIHelper()
+                notif = NotifHelper()
+
+                summary = ''
+                if full_text:
+                    try:
+                        summary = ai.summarize_document(full_text, max_length=300)
+                    except Exception as e:
+                        _logger.warning('AI summarization failed after OCR: %s', e)
+
+                if not summary:
+                    summary = full_text or ''
+
+                # Lưu thông tin tóm tắt
+                try:
+                    target.sudo().write({
+                        'ai_summary': summary,
+                        'ai_processed_at': fields.Datetime.now(),
+                        'ai_processed_by': self.env.user.id,
+                    })
+                except Exception:
+                    _logger.exception('Không thể lưu thông tin AI summary cho document %s', target.id)
+
+                # Gửi Telegram nội bộ
+                try:
+                    notif.send_telegram_template(
+                        'document_approved',
+                        doc_name=target.name,
+                        doc_type=dict(target._fields['doc_type'].selection).get(target.doc_type, target.doc_type),
+                        customer_name=target.customer_id.name if target.customer_id else None,
+                        summary=summary,
+                        full_text=full_text
+                    )
+                except Exception as e:
+                    _logger.exception('Gửi Telegram sau OCR thất bại: %s', e)
+
+                # Gửi Email cho khách hàng nếu có email
+                if target.customer_id and getattr(target.customer_id, 'email', False):
+                    try:
+                        notif.send_email_template(
+                            'document_approved',
+                            to_email=target.customer_id.email,
+                            recipient_name=target.customer_id.name.split()[0] if target.customer_id.name else target.customer_id.name,
+                            doc_name=target.name,
+                            doc_type=dict(target._fields['doc_type'].selection).get(target.doc_type, target.doc_type),
+                            customer_name=target.customer_id.name,
+                            summary=summary,
+                            full_text=full_text
+                        )
+                    except Exception as e:
+                        _logger.exception('Gửi email sau OCR thất bại: %s', e)
+            except Exception as e:
+                _logger.exception('Lỗi khi xử lý AI/notify sau OCR: %s', e)
 
             # Mở lại form của bản ghi đã được lưu để hiển thị đúng nội dung OCR và preview PDF.
             return {

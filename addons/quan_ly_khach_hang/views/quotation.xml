@@ -11,7 +11,7 @@
                         <button
                             name="action_send_email"
                             type="object"
-                            string="Gửi"
+                            string="Gửi email"
                             class="btn-primary"
                             attrs="{'invisible': [('status', 'in', ['da_gui','chap_nhan','tu_choi'])]}"/>
                         <button
@@ -38,19 +38,8 @@
                             string="Chấp nhận"
                             class="btn-primary"
                             attrs="{'invisible': [('status', 'in', ['chap_nhan', 'tu_choi'])]}"/>
-                        <button
-                            name="action_send_email"
-                            type="object"
-                            string="Gửi email"
-                            class="btn-secondary"
-                            attrs="{'invisible': [('status', 'in', ['chap_nhan', 'tu_choi'])]}"/>
                     </header>
                     <sheet>
-                        <div class="oe_title">
-                            <h1>
-                                <field name="name" placeholder="Số báo giá..."/>
-                            </h1>
-                        </div>
                         <group>
                             <group>
                                 <field name="customer_id" options="{'no_create': True}"/>
@@ -125,6 +114,8 @@
                 <search>
                     <field name="name"/>
                     <field name="customer_id"/>
+                    <field name="date"/>
+                    <field name="status"/>
                     <separator/>
                     <filter name="my_quotations" string="Báo giá của tôi" domain="[('customer_id.nhan_vien_phu_trach_id', '=', uid)]"/>
                     <filter name="approved" string="Đã chấp nhận" domain="[('status', '=', 'chap_nhan')]"/>

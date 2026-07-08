@@ -58,14 +58,19 @@ class CustomerInteraction(models.Model):
         return interaction
 
     def write(self, vals):
+        original_types = {rec.id: rec.type for rec in self}
         result = super().write(vals)
-        if 'content' in vals:
-            self._analyze_sentiment_if_required()
+        for record in self:
+            if 'type' in vals and record.type == 'khieu_nai' and original_types.get(record.id) != 'khieu_nai':
+                record._create_complaint_meeting()
+            if 'content' in vals or 'note' in vals:
+                record._analyze_sentiment_if_required()
         return result
 
     def _analyze_sentiment_if_required(self):
         for record in self:
-            if not record.content:
+            content_to_analyze = record.content or record.note
+            if not content_to_analyze:
                 continue
             if record.sentiment_label or record.sentiment_score or record.sentiment_summary:
                 continue
@@ -74,7 +79,7 @@ class CustomerInteraction(models.Model):
                 from smart_biz_services.ai_helper import AIHelper
 
                 ai_helper = AIHelper()
-                analysis = ai_helper.analyze_sentiment(record.content)
+                analysis = ai_helper.analyze_sentiment(content_to_analyze)
 
                 if not isinstance(analysis, dict):
                     raise ValueError('Kết quả phân tích không hợp lệ')

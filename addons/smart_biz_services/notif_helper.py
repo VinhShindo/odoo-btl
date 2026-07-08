@@ -5,7 +5,7 @@ import os
 import sys
 import smtplib
 from email.message import EmailMessage
-from notification_templates import TelegramTemplates, EmailTemplates
+from notification_templates import TelegramTemplates, EmailTemplates, NotificationTemplates
 import ssl
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -60,6 +60,7 @@ class NotifHelper:
             response = requests.post(url, json={
                 'chat_id': target_chat_id,
                 'text': message,
+                'parse_mode': 'Markdown',   # <-- QUAN TRỌNG: Thêm dòng này
             }, timeout=10)
             
             success = response.status_code == 200
@@ -162,9 +163,10 @@ class NotifHelper:
             'employee_created': 'Chào mừng bạn gia nhập công ty',
             'employee_updated': 'Cập nhật thông tin nhân viên',
             'quotation_negotiation': 'Lời mời đàm phán báo giá',
+            'quotation_sent': 'Báo giá đã gửi',
             'meeting_invitation': 'Lời mời họp trực tuyến',  # THÊM DÒNG NÀY
         }
-        subject = subject_map.get(template_type, f'Thông báo từ {EmailTemplates.COMPANY_NAME}')
+        subject = subject_map.get(template_type, f'Thông báo từ {NotificationTemplates.COMPANY_NAME}')
         
         html_body = template_method(recipient_name=recipient_name or to_email.split('@')[0], **kwargs)
         return self.send_email(

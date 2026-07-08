@@ -22,7 +22,6 @@
                         <group col="4" string="Thông tin cơ bản">
                             <field name="ho_ten_dem" placeholder="Họ tên đệm"/>
                             <field name="ten" placeholder="Tên"/>
-                            <field name="ma_dinh_danh" placeholder="Mã định danh"/>
                             <field name="work_email" widget="email"/>
                             <field name="work_phone" widget="phone"/>
                             <field name="birthday"/>
@@ -59,7 +58,7 @@
                                 <field name="ghi_chu_nhan_su" readonly="1" nolabel="1"/>
                             </page>
                             <page string="Lịch sử công tác">
-                                <field name="lich_su_cong_tac_ids">
+                                <field name="lich_su_cong_tac_ids" widget="one2many" mode="tree">
                                     <tree>
                                         <field name="chuc_vu_id"/>
                                         <field name="don_vi_id"/>
@@ -68,7 +67,7 @@
                                 </field>
                             </page>
                             <page string="Chứng chỉ &amp; Bằng cấp">
-                                <field name="danh_sach_chung_chi_bang_cap_ids">
+                                <field name="danh_sach_chung_chi_bang_cap_ids" widget="one2many" mode="tree">
                                     <tree>
                                         <field name="chung_chi_bang_cap_id"/>
                                         <field name="ghi_chu"/>
@@ -77,32 +76,48 @@
                                 </field>
                             </page>
                             <page string="Hồ sơ điện tử">
-                                <field name="ho_so_dien_tu_ids" context="{'default_nhan_vien_id': active_id}">
-                                    <tree editable="bottom">
-                                        <field name="ho_so"/>
-                                        <field name="loai_ho_so"/>
-                                        <field name="ten_file"/>
-                                        <field name="ngay_dang_tai"/>
-                                    </tree>
-                                    <form>
-                                        <group col="2">
-                                            <group>
-                                                <field name="nhan_vien_id" invisible="1"/>
-                                                <field name="ho_so" placeholder="Tên hồ sơ..."/>
-                                                <field name="loai_ho_so"/>
-                                                <field name="ten_file" placeholder="Tên file..."/>
+                                <field name="ho_so_dien_tu_ids" mode="kanban" add-label="Thêm hồ sơ" colspan="2" context="{'default_nhan_vien_id': active_id}">
+                                    <kanban>
+                                        <templates>
+                                            <t t-name="kanban-box">
+                                                <div class="oe_kanban_global_click o_hr_ho_so_card" style="padding: 12px; border: 1px solid #e0e0e0; border-radius: 10px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                                                    <div style="font-weight: 600; margin-bottom: 6px;">
+                                                        <field name="ho_so"/>
+                                                    </div>
+                                                    <div style="font-size: 12px; color: #6b7280; margin-bottom: 8px;">
+                                                        <span><field name="loai_ho_so"/></span>
+                                                    </div>
+                                                    <div style="font-size: 13px; margin-bottom: 8px;">
+                                                        <strong>Tên file:</strong> <field name="ten_file"/>
+                                                    </div>
+                                                    <div style="font-size: 12px; color: #9ca3af;">
+                                                        <span><field name="ngay_dang_tai"/></span>
+                                                    </div>
+                                                </div>
+                                            </t>
+                                        </templates>
+                                    </kanban>
+                                    <form string="Hồ sơ điện tử">
+                                        <sheet>
+                                            <group col="2">
+                                                <group>
+                                                    <field name="nhan_vien_id" invisible="1"/>
+                                                    <field name="ho_so" placeholder="Tên hồ sơ..."/>
+                                                    <field name="loai_ho_so"/>
+                                                    <field name="ten_file" placeholder="Tên file..."/>
+                                                </group>
+                                                <group>
+                                                    <field name="ngay_dang_tai"/>
+                                                    <field name="van_ban_id" readonly="1"/>
+                                                </group>
                                             </group>
                                             <group>
-                                                <field name="ngay_dang_tai"/>
-                                                <field name="van_ban_id" readonly="1"/>
+                                                <field name="tep_dinh_kem" filename="ten_file" widget="binary" placeholder="Tệp đính kèm..."/>
                                             </group>
-                                        </group>
-                                        <group>
-                                            <field name="tep_dinh_kem" filename="ten_file" widget="binary" placeholder="Tệp đính kèm..."/>
-                                        </group>
-                                        <group>
-                                            <field name="note" placeholder="Ghi chú..."/>
-                                        </group>
+                                            <group>
+                                                <field name="note" placeholder="Ghi chú..."/>
+                                            </group>
+                                        </sheet>
                                     </form>
                                 </field>
                             </page>
@@ -118,7 +133,6 @@
             <field name="model">hr.employee</field>
             <field name="priority">1</field>
             <field name="arch" type="xml">
-                <!-- Đã xóa pager="true" và xóa class="o_list_view" để tránh lỗi parse -->
                 <tree>
                     <field name="ho_va_ten"/>
                     <field name="ma_dinh_danh"/>
@@ -129,14 +143,13 @@
             </field>
         </record>
 
-        <!-- ==================== KANBAN VIEW (DÙNG chuc_vu_id) ==================== -->
+        <!-- ==================== KANBAN VIEW ==================== -->
         <record id="view_nhan_vien_kanban" model="ir.ui.view">
             <field name="name">nhan_vien.kanban</field>
             <field name="model">hr.employee</field>
             <field name="priority">2</field>
             <field name="arch" type="xml">
                 <kanban class="o_kanban_mobile" sample="1">
-                    <!-- Khai báo các trường cần dùng -->
                     <field name="id"/>
                     <field name="ho_va_ten"/>
                     <field name="ma_dinh_danh"/>
@@ -150,7 +163,6 @@
                     <field name="diem_kpi"/>
                     <field name="active"/>
 
-                    <!-- Chia cột tự động dựa trên Phòng ban (don_vi_id) -->
                     <group>
                         <field name="don_vi_id" widget="kanban"/>
                     </group>
@@ -250,7 +262,6 @@
             <field name="view_mode">kanban,tree,form</field>
             <field name="view_id" ref="view_nhan_vien_kanban"/>
             <field name="search_view_id" ref="nhan_vien_search"/>
-            <!-- Đã thêm limit="20" để mỗi trang hiện 20 nhân viên và bật thanh phân trang -->
             <field name="limit">20</field>
         </record>
     </data>

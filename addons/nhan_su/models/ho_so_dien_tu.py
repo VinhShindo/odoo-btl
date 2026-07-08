@@ -1,4 +1,7 @@
 from odoo import models, fields, api
+import logging
+import os
+import sys
 
 
 class HoSoDienTu(models.Model):
@@ -37,54 +40,105 @@ class HoSoDienTu(models.Model):
         """Tự động tạo document trong van_ban khi hồ sơ được tạo/update"""
         self.ensure_one()
 
-        # Nếu chưa có file, không tạo document
         if not self.tep_dinh_kem:
             return
 
-        # Tìm folder của nhân viên
         nhan_vien = self.nhan_vien_id
+        if not nhan_vien:
+            return
+
         if not nhan_vien.folder_id:
-            # Nếu chưa có folder, tạo folder
             nhan_vien._create_employee_folder()
 
-        folder_id = nhan_vien.folder_id
+        metadata = self.env['van_ban.document']._get_default_document_metadata(
+            employee=nhan_vien,
+            doc_type='hop_dong' if self.loai_ho_so == 'hop_dong_lao_dong' else 'khac'
+        )
 
-        # Ánh xạ loại hồ sơ sang doc_type
         doc_type_map = {
             'cv': 'khac',
             'cccd': 'khac',
             'bang_cap': 'khac',
             'hop_dong_lao_dong': 'hop_dong'
         }
+        doc_type = doc_type_map.get(self.loai_ho_so, 'khac')
 
-        # Kiểm tra xem đã có document cho hồ sơ này không
+        loai_text = dict(self._fields['loai_ho_so'].selection).get(self.loai_ho_so, 'Hồ sơ')
+        note_text = f"{self.note}\n\n[Từ hồ sơ: {loai_text}]" if self.note else f"[Từ hồ sơ: {loai_text}]"
+
+        doc_vals = {
+            'name': f"{nhan_vien.ho_va_ten or nhan_vien.name} - {loai_text}",
+            'doc_type': doc_type,
+            'nhan_vien_id': nhan_vien.id,
+            'file': self.tep_dinh_kem,
+            'file_name': self.ten_file,
+            'status': 'draft',
+            'source_module': 'hrm',
+            'note': note_text,
+        }
+        doc_vals.update(metadata)
+
         if self.van_ban_id:
-            # Update document hiện tại
             self.van_ban_id.write({
-                'file': self.tep_dinh_kem,
-                'file_name': self.ten_file,
-                'note': f"{self.note}\n\n[Từ hồ sơ: {dict(self._fields['loai_ho_so'].selection).get(self.loai_ho_so, 'Hồ sơ')}]"
+                **doc_vals,
+                'note': note_text,
             })
+            doc = self.van_ban_id
         else:
-            # Tạo document mới
-            loai_text = dict(self._fields['loai_ho_so'].selection).get(self.loai_ho_so, 'Hồ sơ')
-            doc_vals = {
-                'name': f"{nhan_vien.ho_va_ten or nhan_vien.name} - {loai_text}",
-                'doc_type': doc_type_map.get(self.loai_ho_so, 'khac'),
-                'nhan_vien_id': nhan_vien.id,
-                'file': self.tep_dinh_kem,
-                'file_name': self.ten_file,
-                'folder_id': folder_id.id,
-                'status': 'draft',
-                'source_module': 'hrm',
-                'note': self.note
-            }
-            
             doc = self.env['van_ban.document'].create(doc_vals)
             self.van_ban_id = doc.id
 
-            if doc and doc.file:
+        if doc and doc.file:
+            try:
+                # Only run OCR if it hasn't completed yet
                 try:
-                    doc.action_scan_ocr()
+                    ocr_done = getattr(doc, 'ocr_status', None) == 'completed'
                 except Exception:
-                    pass
+                    ocr_done = False
+
+                if not ocr_done:
+                    try:
+                        doc.action_scan_ocr()
+                    except Exception:
+                        logging.getLogger(__name__).exception('OCR failed for document %s', doc.id)
+
+                # Send notification about employee document update with AI summary
+                try:
+                    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../../addons'))
+                    from smart_biz_services.ai_helper import AIHelper
+                    from smart_biz_services.notif_helper import NotifHelper
+
+                    ai = AIHelper()
+                    notif = NotifHelper()
+
+                    summary = ''
+                    if getattr(doc, 'ocr_text', None):
+                        try:
+                            summary = ai.summarize_document(doc.ocr_text, max_length=200)
+                        except Exception:
+                            summary = (doc.ocr_text or '')[:400]
+                    else:
+                        summary = doc.note or doc.file_name or doc.name
+
+                    try:
+                        notif.send_telegram_template(
+                            'employee_document_updated',
+                            employee_name=nhan_vien.ho_va_ten or nhan_vien.name,
+                            doc_name=doc.name,
+                            doc_summary=summary
+                        )
+                        if nhan_vien and getattr(nhan_vien, 'work_email', None):
+                            notif.send_email_template(
+                                'employee_document_updated',
+                                to_email=nhan_vien.work_email,
+                                recipient_name=nhan_vien.ho_va_ten or nhan_vien.name,
+                                employee_name=nhan_vien.ho_va_ten or nhan_vien.name,
+                                doc_name=doc.name,
+                                doc_summary=summary
+                            )
+                    except Exception:
+                        logging.getLogger(__name__).exception('Không thể gửi thông báo cập nhật hồ sơ nhân viên cho document %s', doc.id)
+                except Exception:
+                    logging.getLogger(__name__).exception('Không thể xử lý AI/notify cho document %s', doc.id)
+            except Exception:
+                pass
