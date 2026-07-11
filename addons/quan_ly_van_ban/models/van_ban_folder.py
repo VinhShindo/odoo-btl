@@ -92,19 +92,21 @@ class VanBanFolder(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         """
-        Ghi đè hàm tạo mới: Khi tạo một thư mục Nhân viên, 
-        hệ thống sẽ tự động sinh thêm 3 thư mục con (Hồ sơ cá nhân, Hợp đồng báo giá, Chứng chỉ)
+        Ghi đè hàm tạo mới: Khi tạo thư mục nhân viên chính, hệ thống sẽ tự động sinh thêm
+        3 thư mục con (Hồ sơ cá nhân, Hợp đồng báo giá, Chứng chỉ).
+        Các thư mục con này không tự tạo thêm thư mục con tiếp để tránh vòng đệ quy.
         """
         records = super(VanBanFolder, self).create(vals_list)
-        for record in records:
-            if record.folder_type == 'employee':
-                subfolders = [
-                    {'name': 'Hồ sơ cá nhân', 'folder_type': 'employee', 'parent_id': record.id},
-                    {'name': 'Hợp đồng báo giá', 'folder_type': 'employee', 'parent_id': record.id},
-                    {'name': 'Chứng chỉ, bằng cấp', 'folder_type': 'employee', 'parent_id': record.id}
-                ]
-                existing_names = record.child_ids.mapped('name')
-                for val in subfolders:
-                    if val['name'] not in existing_names:
-                        self.env['van_ban.folder'].create(val)
+        if self.env.context.get('create_employee_subfolders'):
+            for record in records:
+                if record.folder_type == 'employee':
+                    subfolders = [
+                        {'name': 'Hồ sơ cá nhân', 'folder_type': 'employee', 'parent_id': record.id},
+                        {'name': 'Hợp đồng báo giá', 'folder_type': 'employee', 'parent_id': record.id},
+                        {'name': 'Chứng chỉ, bằng cấp', 'folder_type': 'employee', 'parent_id': record.id}
+                    ]
+                    existing_names = record.child_ids.mapped('name')
+                    for val in subfolders:
+                        if val['name'] not in existing_names:
+                            self.env['van_ban.folder'].with_context(create_employee_subfolders=False).create(val)
         return records

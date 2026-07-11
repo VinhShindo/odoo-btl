@@ -344,9 +344,9 @@ class NhanVien(models.Model):
                 'folder_type': 'employee'
             })
         
-        # Tạo folder nhân viên
+        # Tạo folder nhân viên chính và tự động sinh thư mục con
         employee_name = self.ho_va_ten or self.name or f"Nhân viên {self.id}"
-        employee_folder = self.env['van_ban.folder'].create({
+        employee_folder = self.env['van_ban.folder'].with_context(create_employee_subfolders=True).create({
             'name': employee_name,
             'parent_id': don_vi_folder.id,
             'folder_type': 'employee'
